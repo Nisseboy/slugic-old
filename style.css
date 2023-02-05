@@ -1,0 +1,125 @@
+/*
+Fonts
+*/
+@font-face {
+  font-family: b612mono;
+  src: url('fonts/B612Mono-Regular.ttf');
+}
+
+/*
+Initialization and themes
+*/
+html, body {
+  margin: 0;
+}
+body {
+  --main-bg: #363538;
+  --footer-bg: #1d1d1d;
+  --border: #6b6b6d;
+  --fg: #ddd;
+
+  --shadow-sizing: 3px;
+  --shadow-dark: #161622;
+  --shadow-light: #363652;
+  --shadow-up: var(--shadow-sizing) var(--shadow-sizing) var(--shadow-sizing) var(--shadow-dark), calc(var(--shadow-sizing) * -1) calc(var(--shadow-sizing) * -1) var(--shadow-sizing) var(--shadow-light);
+  --shadow-down: inset var(--shadow-sizing) var(--shadow-sizing) var(--shadow-sizing) var(--shadow-dark), inset calc(var(--shadow-sizing) * -1) calc(var(--shadow-sizing) * -1) var(--shadow-sizing) var(--shadow-light);
+
+  position: relative;
+  margin: auto;
+
+  font-family: b612mono;
+  font-weight: 700;
+}
+body.light-theme {
+  --main-bg: #363538;
+  --footer-bg: #1d1d1d;
+  --border: #6b6b6d;
+  --fg: #ddd;
+
+  --shadow-dark: #ccc;
+  --shadow-light: #eee;
+}
+
+main {
+  aspect-ratio: 16 / 9;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  background-color: var(--main-bg);
+}
+
+/*
+The main area and the footer
+*/
+.main {
+  width: 95%;
+  height: 90%;
+
+  border: 5px solid var(--border);
+
+  position: relative;
+}
+.footer {
+  width: 95%;
+  height: calc(var(--unit) * 1.2);
+  background-color: var(--footer-bg);
+}
+
+/*
+Gates
+*/
+.gate {
+  --name-length: 19;
+
+  min-width: calc(var(--unit) * 6);
+  width: calc(var(--unit) * var(--name-length));
+  height: var(--unit);
+
+  position: absolute;
+  top: var(--unit);
+  left: var(--unit);
+
+  background-color: red;
+
+  text-transform: uppercase;
+  font-size: var(--unit);
+
+  pointer-events: none;
+
+  letter-spacing: calc(var(--unit) / 2);
+}
+
+/*
+Theme switcher
+*/
+.theme-switcher {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0.5rem;
+
+  cursor: pointer;
+
+  background: none;
+  color: var(--fg);
+  border: none;
+
+  font-size: 20px;
+}
+
+
+
+
+.marker {
+  width: var(--unit);
+  height: var(--unit);
+  background-color: blanchedalmond;
+
+  position: absolute;
+
+  pointer-events: none;
+}
