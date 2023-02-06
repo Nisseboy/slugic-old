@@ -17,6 +17,7 @@ body {
   --footer-bg: #1d1d1d;
   --border: #6b6b6d;
   --fg: #ddd;
+  --text: blanchedalmond;
 
   --shadow-sizing: 3px;
   --shadow-dark: #161622;
@@ -62,6 +63,10 @@ The main area and the footer
   border: 5px solid var(--border);
 
   position: relative;
+
+  background:linear-gradient(white 1px, var(--main-bg) 1px);
+  background-size: calc(var(--unit) / 2) calc(var(--unit) / 4);
+  background-position: calc(var(--unit) / 2) calc(var(--unit) / 2);
 }
 .footer {
   width: 95%;
@@ -73,11 +78,13 @@ The main area and the footer
 Gates
 */
 .gate {
-  --name-length: 19;
+  --name-length: 18;
+  --num-inputs: 2;
+  --num-outputs: 1;
 
-  min-width: calc(var(--unit) * 6);
-  width: calc(var(--unit) * var(--name-length));
-  height: var(--unit);
+  min-width: calc(var(--unit) * 3);
+  width: calc(var(--unit) * ((var(--name-length)) / 3 + 0.5));
+  min-height: var(--unit);
 
   position: absolute;
   top: var(--unit);
@@ -86,11 +93,40 @@ Gates
   background-color: red;
 
   text-transform: uppercase;
-  font-size: var(--unit);
+  font-size: calc(var(--unit) / 3);
 
   pointer-events: none;
 
-  letter-spacing: calc(var(--unit) / 2);
+  letter-spacing: calc(var(--unit) / 3 - 1ch);
+  color: var(--text);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/*
+Plugs
+*/
+.plug-holder {
+  width: calc(var(--unit) * 0.5);
+  min-height: calc(var(--unit) * var(--num-inputs) * 0.75);
+  height: calc(var(--unit) * var(--num-outputs) * 0.75);
+}
+.plug-holder.left {
+  transform: translateX(-50%);
+}
+.plug-holder.right {
+  transform: translateX(50%);
+}
+
+.plug {
+  width: calc(var(--unit) * 0.5);
+  height: calc(var(--unit) * 0.5);
+
+  border-radius: 100%;
+
+  background-color: black;
 }
 
 /*
