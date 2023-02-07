@@ -19,7 +19,7 @@ themeSwitcherElem.onclick = e => {
 
 //Sizing
 function resize() {
-  unit = mainElem.getBoundingClientRect().height / 40;
+  unit = mainElem.getBoundingClientRect().height / 30;
   document.body.style.setProperty("--unit", unit + "px");
 }
 resize();
@@ -36,6 +36,7 @@ if (Object.keys(gates.custom).length == 0) {
   let gate = {
     x: 10,
     y: 5,
+    type: "and",
     id: generateID()
   };
   currentGate.gates[gate.id] = gate;
@@ -52,12 +53,18 @@ setInterval(draw, 1000 / 60);
 function draw() {
   for (let i in currentGate.gates) {
     let gate = currentGate.gates[i];
+    let gateType = gates.all[gate.type];
     if (!drawnGates[i]) {
       let gateElem = document.createElement("div");
       gateElem.className = "gate";
       gateElem.style.left = `calc(var(--unit) * ${gate.x})`;
       gateElem.style.top = `calc(var(--unit) * ${gate.y})`;
+
+      gateElem.innerText = gate.type;
+
       mainElem.appendChild(gateElem);
+
+      drawnGates[i] = gateElem;
     }
   }
 }
