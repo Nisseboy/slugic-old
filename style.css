@@ -86,7 +86,7 @@ Gates
   text-transform: uppercase;
   font-size: calc(var(--unit) / 2);
 
-  pointer-events: none;
+  user-select: none;
 
   letter-spacing: calc(var(--unit) / 2 - 1ch);
   color: var(--text);
@@ -95,8 +95,8 @@ Gates
   align-items: center;
   justify-content: space-between;
 
-  outline: 3px solid rgb(0 0 0 / 0.4);
-  outline-offset: -3px;
+  border: 3px solid rgb(0 0 0 / 0.4);
+  box-sizing: border-box;
 }
 
 /*
@@ -126,6 +126,14 @@ Plugs
 }
 
 /*
+All elements that are selected by dragging get this style
+*/
+.selected {
+  outline: 2px solid #13c9e6;
+  outline-offset: 5px;
+}
+
+/*
 Theme switcher
 */
 .theme-switcher {
@@ -151,14 +159,16 @@ Theme switcher
   height: calc(var(--unit) * 10);
   transform: translate(-50%, -50%);
 
-  /*
+  
   background: radial-gradient(black 1px, transparent 1px);
   background-size: calc(var(--unit) / 4) calc(var(--unit) / 4);
   background-position: calc(var(--unit) / -2 - 3px) calc(var(--unit) / -2 - 3px);
-  */
+  
   position: absolute;
 
   pointer-events: none;
 
   z-index: 0;
+
+  display: none;
 }
