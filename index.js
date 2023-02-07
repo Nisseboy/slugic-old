@@ -59,9 +59,29 @@ function draw() {
       gateElem.className = "gate";
       gateElem.style.left = `calc(var(--unit) * ${gate.x})`;
       gateElem.style.top = `calc(var(--unit) * ${gate.y})`;
-
       gateElem.innerText = gate.type;
+      gateElem.style.setProperty("--name-length", Math.ceil(gate.type.length / 2) * 2);
+      gateElem.style.setProperty("--num-inputs", gateType.inputs.length);
+      gateElem.style.setProperty("--num-outputs", gateType.outputs.length);
 
+      let plugHolderLeft = document.createElement("div");
+      plugHolderLeft.className = "plug-holder left";
+      for (let j in gateType.inputs) {
+        let plug = document.createElement("div");
+        plug.className = "plug";
+        plugHolderLeft.appendChild(plug);
+      }
+
+      let plugHolderRight = document.createElement("div");
+      plugHolderRight.className = "plug-holder right";
+      for (let j in gateType.outputs) {
+        let plug = document.createElement("div");
+        plug.className = "plug";
+        plugHolderRight.appendChild(plug);
+      }
+
+      gateElem.prepend(plugHolderLeft);
+      gateElem.appendChild(plugHolderRight);
       mainElem.appendChild(gateElem);
 
       drawnGates[i] = gateElem;

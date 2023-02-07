@@ -78,12 +78,8 @@ The main area and the footer
 Gates
 */
 .gate {
-  --name-length: 18;
-  --num-inputs: 2;
-  --num-outputs: 1;
-
   min-width: calc(var(--unit) * 3);
-  width: calc(var(--unit) * ((var(--name-length)) / 3 + 0.5));
+  width: calc(var(--unit) * ((var(--name-length)) / 2 + 1.5));
   min-height: var(--unit);
 
   position: absolute;
@@ -93,11 +89,11 @@ Gates
   background-color: red;
 
   text-transform: uppercase;
-  font-size: calc(var(--unit) / 3);
+  font-size: calc(var(--unit) / 2);
 
   pointer-events: none;
 
-  letter-spacing: calc(var(--unit) / 3 - 1ch);
+  letter-spacing: calc(var(--unit) / 2 - 1ch);
   color: var(--text);
 
   display: flex;
@@ -158,4 +154,6 @@ Theme switcher
   position: absolute;
 
   pointer-events: none;
+
+  z-index: 100;
 }
