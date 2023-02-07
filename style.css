@@ -64,9 +64,7 @@ The main area and the footer
 
   position: relative;
 
-  background:linear-gradient(white 1px, var(--main-bg) 1px);
-  background-size: calc(var(--unit) / 2) calc(var(--unit) / 4);
-  background-position: calc(var(--unit) / 2) calc(var(--unit) / 2);
+  overflow: hidden;
 }
 .footer {
   width: 95%;
@@ -80,13 +78,10 @@ Gates
 .gate {
   min-width: calc(var(--unit) * 3);
   width: calc(var(--unit) * ((var(--name-length)) / 2 + 1.5));
-  min-height: var(--unit);
 
   position: absolute;
   top: var(--unit);
   left: var(--unit);
-
-  background-color: red;
 
   text-transform: uppercase;
   font-size: calc(var(--unit) / 2);
@@ -99,6 +94,9 @@ Gates
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  outline: 3px solid rgb(0 0 0 / 0.4);
+  outline-offset: -3px;
 }
 
 /*
@@ -119,6 +117,8 @@ Plugs
 .plug {
   width: calc(var(--unit) * 0.5);
   height: calc(var(--unit) * 0.5);
+
+  position: absolute;
 
   border-radius: 100%;
 
@@ -147,13 +147,18 @@ Theme switcher
 
 
 .marker {
-  width: var(--unit);
-  height: var(--unit);
-  background-color: blanchedalmond;
+  width: calc(var(--unit) * 10);
+  height: calc(var(--unit) * 10);
+  transform: translate(-50%, -50%);
 
+  /*
+  background: radial-gradient(black 1px, transparent 1px);
+  background-size: calc(var(--unit) / 4) calc(var(--unit) / 4);
+  background-position: calc(var(--unit) / -2 - 3px) calc(var(--unit) / -2 - 3px);
+  */
   position: absolute;
 
   pointer-events: none;
 
-  z-index: 100;
+  z-index: 0;
 }

@@ -2,6 +2,7 @@
 let currentGate;
 let currentGateName;
 let unit;
+let sizeDivisions = 30;
 let step = 4;
 
 //Defining DOM Elements
@@ -19,7 +20,7 @@ themeSwitcherElem.onclick = e => {
 
 //Sizing
 function resize() {
-  unit = mainElem.getBoundingClientRect().height / 30;
+  unit = mainElem.getBoundingClientRect().height / sizeDivisions;
   document.body.style.setProperty("--unit", unit + "px");
 }
 resize();
@@ -56,19 +57,36 @@ function draw() {
     let gateType = gates.all[gate.type];
     if (!drawnGates[i]) {
       let gateElem = document.createElement("div");
+
+      let inputLen = gateType.inputs.length;
+      let outputLen = gateType.outputs.length;
+      let gateHeight = Math.max(inputLen, outputLen) * 0.75;
+
       gateElem.className = "gate";
       gateElem.style.left = `calc(var(--unit) * ${gate.x})`;
       gateElem.style.top = `calc(var(--unit) * ${gate.y})`;
       gateElem.innerText = gate.type;
       gateElem.style.setProperty("--name-length", Math.ceil(gate.type.length / 2) * 2);
-      gateElem.style.setProperty("--num-inputs", gateType.inputs.length);
-      gateElem.style.setProperty("--num-outputs", gateType.outputs.length);
+      gateElem.style.setProperty("--num-inputs", inputLen);
+      gateElem.style.setProperty("--num-outputs", outputLen);
+      gateElem.style.backgroundColor = gateType.color;
+
 
       let plugHolderLeft = document.createElement("div");
       plugHolderLeft.className = "plug-holder left";
       for (let j in gateType.inputs) {
         let plug = document.createElement("div");
         plug.className = "plug";
+
+        let baseY = gateHeight / inputLen * (j * 1 + 0.5);
+        let finalY;
+        if (baseY > gateHeight / 2) {
+          finalY = Math.ceil(baseY * step) / step;
+        } else {
+          finalY = Math.floor(baseY * step) / step;
+        }
+        plug.style.top = `calc(${finalY - 0.25} * var(--unit))`;
+
         plugHolderLeft.appendChild(plug);
       }
 
@@ -77,6 +95,16 @@ function draw() {
       for (let j in gateType.outputs) {
         let plug = document.createElement("div");
         plug.className = "plug";
+        
+        let baseY = gateHeight / outputLen * (j * 1 + 0.5);
+        let finalY;
+        if (baseY > gateHeight / 2) {
+          finalY = Math.ceil(baseY * step) / step;
+        } else {
+          finalY = Math.floor(baseY * step) / step;
+        }
+        plug.style.top = `calc(${finalY - 0.25} * var(--unit))`;
+
         plugHolderRight.appendChild(plug);
       }
 
