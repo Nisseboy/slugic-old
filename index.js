@@ -60,8 +60,10 @@ if (Object.keys(gates.custom).length == 0) {
 
 //Drawing the gates
 let drawnGates = {};
+let drawnGatesInFooter = {};
 
 function draw() {
+  //Adding and moving placed gates
   for (let i in currentGate.gates) {
     let gate = currentGate.gates[i];
     let gateType = gates.all[gate.type];
@@ -129,16 +131,44 @@ function draw() {
 
     gateElem.dataset.id = gate.id;
 
-    gateElem.addEventListener("mousedown", e => {startDrag(e, gate)});
+    gateElem.addEventListener("mousedown", e => {
+      if (e.button == 0) {
+        startDrag(e, gate)
+      }
+      else if (e.button == 2) {
+        delete currentGate.gates[i];
+        draw();
+      }
+    });
 
     drawnGates[i] = gateElem;
     gate.elem = gateElem;
   }
+
+  //Removing deleted gates
   for (let i in drawnGates) {
     if (!currentGate.gates[i]) {
       drawnGates[i].remove();
       delete drawnGates[i];
     }
+  }
+
+  //Placing gates in footer
+  for (let i in gates.all) {
+    if (drawnGatesInFooter[i]) {
+      continue;
+    }
+    let gateType = gates.all[i];
+
+    let gateElem = document.createElement("div");
+    gateElem.className = "gate in-footer";
+    gateElem.style.backgroundColor = gateType.color;
+    gateElem.style.setProperty("--name-length", Math.ceil(i.length / 2) * 2);
+    gateElem.innerText = i;
+
+
+    footerElem.appendChild(gateElem);
+    drawnGatesInFooter[i] = gateElem;
   }
 }
 
@@ -149,7 +179,7 @@ draw();
 let dragged = [];
 function startDrag(e, object) {
   let coords = getCoords(e);
-  if (!e.ctrlKey) {
+  if (!e.ctrlKey && !object.elem.classList.contains("selected")) {
     clearSelected();
   }
   object.elem.classList.add("selected");
@@ -194,6 +224,8 @@ mainElem.addEventListener("mousedown", startSelect);
 let reselect = [];
 let selectStart = {};
 function startSelect(e) {
+  if (e.button != 0)
+    return;
   let coords = getCoords(e);
   selectStart = coords;
 
@@ -222,11 +254,40 @@ function whileSelect(e) {
   selectionElem.style.top = y1 + "px";
   selectionElem.style.width = x2 - x1 + "px";
   selectionElem.style.height = y2 - y1 + "px";
+
+  clearSelected();
+  let mainbox = mainElem.getBoundingClientRect();
+  getElements().forEach((elem, i) => {
+    let box = elem.getBoundingClientRect();
+    if (
+      x1 < box.x + box.width - mainbox.x &&
+      x2 > box.x - mainbox.x &&
+      y1 < box.y + box.height - mainbox.y &&
+      y2 > box.y - mainbox.y
+    ) {
+      elem.classList.add("selected");
+    }
+  });
 }
 function stopSelect(e) {
   selectionElem.style.display = "none";
   document.removeEventListener("mousemove", whileSelect);
   document.removeEventListener("mouseup", stopSelect);
+}
+
+
+//Removes all selected gates on Delete or Backspace
+document.addEventListener("keydown", e => {
+  if (e.key == "Delete" || e.key == "Backspace") {
+    getSelected().forEach(elem => {
+      removeFromID(elem.dataset.id);
+    });
+  }
+});
+
+//Prevents context menu
+document.oncontextmenu = e => {
+  return false;
 }
 
 
@@ -264,4 +325,22 @@ function clearSelected() {
   getSelected().forEach(element => {
     element.classList.remove("selected");
   });
+}
+
+//Returns array of all elements
+function getElements() {
+  return Array.from(document.getElementsByClassName("gate"));
+}
+
+//Returns object from id
+function fromID(id) {
+  return currentGate.gates[id];
+}
+
+//Removes object from id
+function removeFromID(id) {
+  if (currentGate.gates[id]) {
+    delete currentGate.gates[id];
+    draw();
+  }
 }
