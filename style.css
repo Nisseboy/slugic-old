@@ -18,6 +18,8 @@ body {
   --border: #6b6b6d;
   --fg: #ddd;
   --text: blanchedalmond;
+  --selected: #1eaec4;
+  --selected-middle: #1eaec422;
 
   --shadow-sizing: 3px;
   --shadow-dark: #161622;
@@ -79,6 +81,9 @@ Gates
   min-width: calc(var(--unit) * 3);
   width: calc(var(--unit) * ((var(--name-length)) / 2 + 1.5));
 
+  min-height: calc(var(--unit) * var(--num-inputs) * 0.75);
+  height: calc(var(--unit) * var(--num-outputs) * 0.75);
+
   position: absolute;
   top: var(--unit);
   left: var(--unit);
@@ -126,12 +131,26 @@ Plugs
 }
 
 /*
-All elements that are selected by dragging get this style
+Styles for selected elements and selection box
 */
 .selected {
-  outline: 2px solid #13c9e6;
-  outline-offset: 5px;
+  outline: 2px solid var(--selected);
+  outline-offset: 4px;
 }
+.selection {
+  position: absolute;
+  box-sizing: border-box;
+
+  display: none;
+
+  background-color: var(--selected-middle);
+  border: 2px solid var(--selected);
+
+  z-index: 10;
+
+  pointer-events: none;
+}
+
 
 /*
 Theme switcher

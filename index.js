@@ -8,6 +8,9 @@ let step = 4;
 //Defining DOM Elements
 const mainElem = document.getElementsByClassName("main")[0];
 const footerElem = document.getElementsByClassName("footer")[0];
+
+const selectionElem = document.getElementsByClassName("selection")[0];
+
 const themeSwitcherElem = document.getElementsByClassName("theme-switcher")[0];
 
 
@@ -65,7 +68,9 @@ function draw() {
     if (drawnGates[i]) {
       drawnGates[i].style.left = `calc(var(--unit) * ${gate.x})`;
       drawnGates[i].style.top = `calc(var(--unit) * ${gate.y})`;
-      break;
+      continue;
+    } else {
+      
     }
     let gateElem = document.createElement("div");
 
@@ -164,6 +169,7 @@ function startDrag(e, object) {
 
   document.addEventListener("mousemove", whileDrag);
   document.addEventListener("mouseup", stopDrag);
+  
   whileDrag(e);
 
   e.stopPropagation();
@@ -182,6 +188,46 @@ function stopDrag(e) {
   document.removeEventListener("mouseup", stopDrag);
 }
 
+
+//Selection field
+mainElem.addEventListener("mousedown", startSelect);
+let reselect = [];
+let selectStart = {};
+function startSelect(e) {
+  let coords = getCoords(e);
+  selectStart = coords;
+
+  reselect = [];
+  if (e.ctrlKey) {
+    reselect = getSelected();
+  }
+
+  document.addEventListener("mousemove", whileSelect);
+  document.addEventListener("mouseup", stopSelect);
+  selectionElem.style.display = "block";
+  
+  whileSelect(e);
+
+  e.stopPropagation();
+}
+function whileSelect(e) {
+  let coords = getCoords(e);
+
+  let x1 = Math.min(selectStart.x, coords.x);
+  let x2 = Math.max(selectStart.x, coords.x);
+  let y1 = Math.min(selectStart.y, coords.y);
+  let y2 = Math.max(selectStart.y, coords.y);
+
+  selectionElem.style.left = x1 + "px";
+  selectionElem.style.top = y1 + "px";
+  selectionElem.style.width = x2 - x1 + "px";
+  selectionElem.style.height = y2 - y1 + "px";
+}
+function stopSelect(e) {
+  selectionElem.style.display = "none";
+  document.removeEventListener("mousemove", whileSelect);
+  document.removeEventListener("mouseup", stopSelect);
+}
 
 
 mainElem.addEventListener("mousemove", e => {
