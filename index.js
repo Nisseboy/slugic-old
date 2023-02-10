@@ -30,38 +30,9 @@ resize();
 window.onresize = resize;
 
 
-
-//Loading gates
-//TODO: load gates
-if (Object.keys(gates.custom).length == 0) {
-  currentGate = new Gate("computer", ["a", "b", "c", "c"], ["a", "b", "c"]);
-  currentGateName = "computer";
-
-  for (let i = 0; i < 5; i++) {
-    let x = Math.floor(Math.random() * sizeDivisions);
-    let y = Math.floor(Math.random() * sizeDivisions);
-    let types = Object.keys(gates.all);
-    let type = types[Math.floor(Math.random() * types.length)];
-
-    let gate = {
-      x,
-      y,
-      type,
-      id: generateID()
-    }
-
-    currentGate.gates[gate.id] = gate;
-  }
-
-  gates.custom[currentGateName] = currentGate;
-  gates.all[currentGateName] = currentGate;
-}
-
-
 //Drawing the gates
 let drawnGates = {};
 let drawnGatesInFooter = {};
-
 function draw() {
   //Adding and moving placed gates
   for (let i in currentGate.gates) {
@@ -155,10 +126,15 @@ function draw() {
 
   //Placing gates in footer
   for (let i in gates.all) {
+    let gateType = gates.all[i];
+
     if (drawnGatesInFooter[i]) {
+      let gateElem = drawnGatesInFooter[i];
+      gateElem.innerText = i;
+      gateElem.style.backgroundColor = gateType.color;
+
       continue;
     }
-    let gateType = gates.all[i];
 
     let gateElem = document.createElement("div");
     gateElem.className = "gate in-footer";
@@ -172,7 +148,62 @@ function draw() {
   }
 }
 
-draw();
+//Loading gates
+//TODO: load gates
+if (Object.keys(gates.custom).length == 0) {
+  currentGate = new Gate("computer", ["a", "b", "c", "c"], ["a", "b", "c"]);
+  currentGateName = "computer";
+
+  for (let i = 0; i < 5; i++) {
+    let x = Math.floor(Math.random() * sizeDivisions);
+    let y = Math.floor(Math.random() * sizeDivisions);
+    let types = Object.keys(gates.all);
+    let type = types[Math.floor(Math.random() * types.length)];
+
+    let gate = {
+      x,
+      y,
+      type,
+      id: generateID()
+    }
+
+    currentGate.gates[gate.id] = gate;
+  }
+
+  gates.custom[currentGateName] = currentGate;
+  gates.all[currentGateName] = currentGate;
+
+  changeGate(currentGateName);
+}
+
+
+//Changes current gate
+function changeGate(type) {
+  let gateType = gates.custom[type];
+  if (!gateType) return;
+
+  let header = document.getElementsByClassName("gate-info")[0];
+
+  currentGate = gateType;
+  currentGateName = type;
+  header.children[0].value = type;
+  header.children[1].value = gateType.color;
+  header.children[2].value = gateType.color;
+
+  draw();
+}
+//Is triggered when something in the header changes
+function renameGate(newName) {
+  console.log(newName);
+}
+function recolorGate(newColor) {
+  let header = document.getElementsByClassName("gate-info")[0];
+  header.children[1].value = newColor;
+  header.children[2].value = newColor;
+
+  currentGate.color = newColor;
+  draw();
+}
 
 
 //Dragging objects (They must have x, y, elem properties)

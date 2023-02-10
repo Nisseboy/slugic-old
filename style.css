@@ -56,11 +56,11 @@ main {
 }
 
 /*
-The main area and the footer
+The main area and the footer as well as the header
 */
 .main {
   width: 95%;
-  height: 90%;
+  height: 87.5%;
 
   border: 5px solid var(--border);
 
@@ -77,6 +77,35 @@ The main area and the footer
   align-items: center;
   flex-wrap: wrap;
 }
+.gate-info {
+  height: var(--unit);
+
+  color: var(--fg);
+
+  display: flex;
+}
+.gate-info input {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+
+  text-transform: uppercase;
+  font-family: inherit;
+  font-weight: inherit;
+  color: var(--text);
+
+  background-color: var(--main-bg);
+  border: 2px solid var(--border);
+}
+#gate-info-hex {
+  width: 5rem;
+  margin-left: 10px;
+}
+#gate-info-color {
+  width: var(--unit);
+}
+
 
 /*
 Gates
