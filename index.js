@@ -34,6 +34,7 @@ window.onresize = resize;
 let drawnGates = {};
 let drawnGatesInFooter = {};
 function draw() {
+  let mainbox = mainElem.getBoundingClientRect();
   //Adding and moving placed gates
   for (let i in currentGate.gates) {
     let gate = currentGate.gates[i];
@@ -69,7 +70,7 @@ function draw() {
       let baseY = gateHeight / inputLen * (j * 1 + 0.5);
       let finalY;
       if (baseY > gateHeight / 2) {
-        finalY = Math.ceil(baseY * step) / step;
+        finalY = Math.floor(baseY * step) / step;
       } else {
         finalY = Math.floor(baseY * step) / step;
       }
@@ -118,6 +119,19 @@ function draw() {
 
   //Removing deleted gates
   for (let i in drawnGates) {
+    let gate = currentGate.gates[i];
+    if (gate) {
+      let gatebox = gate.elem.getBoundingClientRect();
+      if (
+       (gate.x < 0 || 
+        gate.y < 0 ||
+        gate.x + gatebox.width / unit >= mainbox.width / unit ||
+        gate.y + gatebox.height / unit >= mainbox.height / unit) &&
+        !gate.isDragged
+      ) {
+        delete currentGate.gates[i];
+      }
+    }
     if (!currentGate.gates[i]) {
       drawnGates[i].remove();
       delete drawnGates[i];
@@ -141,6 +155,27 @@ function draw() {
     gateElem.style.backgroundColor = gateType.color;
     gateElem.style.setProperty("--name-length", Math.ceil(i.length / 2) * 2);
     gateElem.innerText = i;
+
+
+    gateElem.addEventListener("mousedown", e => {
+      let coords = getCoords(e);
+      let gate = {
+        x: coords.x / unit,
+        y: coords.y / unit,
+        type: i,
+        id: generateID(),
+        isDragged: true,
+      }
+      currentGate.gates[gate.id] = gate;
+
+      draw();
+      let box = gate.elem.getBoundingClientRect();
+      gate.x -= box.width / 2 / unit;
+      gate.y -= box.height / 2 / unit;
+      draw();
+      
+      startDrag(e, gate);
+    });
 
 
     footerElem.appendChild(gateElem);
@@ -226,6 +261,7 @@ function startDrag(e, object) {
       },
       object: ob
     });
+    ob.isDragged = true;
   });
 
   document.addEventListener("mousemove", whileDrag);
@@ -245,6 +281,10 @@ function whileDrag(e) {
   draw();
 }
 function stopDrag(e) {
+  dragged.forEach((object, i) => {
+    object.object.isDragged = false;
+  });
+  draw();
   document.removeEventListener("mousemove", whileDrag);
   document.removeEventListener("mouseup", stopDrag);
 }
