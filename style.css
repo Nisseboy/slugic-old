@@ -21,6 +21,9 @@ body {
   --selected: #1eaec4;
   --selected-middle: #1eaec422;
 
+  --wire-off: #321a1f;
+  --wire-on: #e7324b;
+
   --shadow-sizing: 3px;
   --shadow-dark: #161622;
   --shadow-light: #363652;
@@ -169,6 +172,20 @@ Plugs
   border-radius: 100%;
 
   background-color: black;
+}
+
+
+/*
+Wires
+*/
+.wires {
+  width: 100%;
+  height: 100%;
+
+  z-index: 100;
+}
+.wire {
+  color: var(--wire-off);
 }
 
 /*

@@ -6,6 +6,7 @@ class Gate {
 
     this.baseGate = false;
     this.gates = {};
+    this.wires = {};
 
     //Color
     this.color = generateColor();

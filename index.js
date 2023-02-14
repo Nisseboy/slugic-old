@@ -5,9 +5,12 @@ let unit;
 let sizeDivisions = 30;
 let step = 4;
 
+let previewWire = {active: false};
+
 //Defining DOM Elements
 const mainElem = document.getElementsByClassName("main")[0];
 const footerElem = document.getElementsByClassName("footer")[0];
+const previewWireElem = document.getElementsByClassName("wire preview")[0];
 
 const selectionElem = document.getElementsByClassName("selection")[0];
 
@@ -33,6 +36,7 @@ window.onresize = resize;
 //Drawing the gates
 let drawnGates = {};
 let drawnGatesInFooter = {};
+
 function draw() {
   let mainbox = mainElem.getBoundingClientRect();
   //Adding and moving placed gates
@@ -76,6 +80,13 @@ function draw() {
       }
       plug.style.top = `calc(${finalY - 0.25} * var(--unit))`;
 
+      plug.addEventListener("mousedown", e => {
+        startWire(e, gate, {
+          input: true,
+          i: j,
+        });
+      });
+
       plugHolderLeft.appendChild(plug);
     }
 
@@ -93,6 +104,13 @@ function draw() {
         finalY = Math.floor(baseY * step) / step;
       }
       plug.style.top = `calc(${finalY - 0.25} * var(--unit))`;
+
+      plug.addEventListener("mousedown", e => {
+        startWire(e, gate, {
+          input: false,
+          i: j,
+        });
+      });
 
       plugHolderRight.appendChild(plug);
     }
@@ -163,6 +181,8 @@ function draw() {
         x: coords.x / unit,
         y: coords.y / unit,
         type: i,
+        inputs: [],
+        outputs: [],
         id: generateID(),
         isDragged: true,
       }
@@ -181,6 +201,31 @@ function draw() {
     footerElem.appendChild(gateElem);
     drawnGatesInFooter[i] = gateElem;
   }
+
+
+  //Moving preview wire
+  if (previewWire.active) {
+    let start = previewWire.start;
+    
+    let stops = previewWire.stops;
+    let end = previewWire.end;
+
+    let plugHolder = start.gate.elem.children[(start.port.input)?0:1];
+    let plug = plugHolder.children[start.port.i];
+    let box = plug.getBoundingClientRect();
+
+    start = {x: box.x + box.width / 2, y: box.y + box.height / 2};
+
+    let path = generatePath({start, stops, end});
+
+    previewWireElem.setAttribute("d", path);
+
+    previewWireElem.style.display = "block";
+  } else {
+    previewWireElem.style.display = "none";
+  }
+  //Adding and moving placed wires
+
 }
 
 //Loading gates
@@ -199,6 +244,8 @@ if (Object.keys(gates.custom).length == 0) {
       x,
       y,
       type,
+      inputs: [],
+      outputs: [],
       id: generateID()
     }
 
@@ -287,6 +334,38 @@ function stopDrag(e) {
   draw();
   document.removeEventListener("mousemove", whileDrag);
   document.removeEventListener("mouseup", stopDrag);
+}
+
+let wireStart;
+function startWire(e, gate, port) {;
+  document.addEventListener("mousemove", whileWire);
+  document.addEventListener("mouseup", stopWire);
+
+  wireStart = {gate, port};
+  
+  whileWire(e);
+
+  e.stopPropagation();
+}
+function whileWire(e) {
+  let coords = getCoords(e);
+
+  previewWire = {
+    start: wireStart,
+    stops: [],
+    end: coords,
+
+    active: true,
+  }
+
+  draw();
+}
+function stopWire(e) {
+  previewWire.active = false;
+
+  draw();
+  document.removeEventListener("mousemove", whileWire);
+  document.removeEventListener("mouseup", stopWire);
 }
 
 
@@ -414,4 +493,15 @@ function removeFromID(id) {
     delete currentGate.gates[id];
     draw();
   }
+}
+
+//Takes an object with a start, stops, and end point and generates a smooth svg path
+function generatePath(desc) {
+  let path = `M${Math.floor(desc.start.x)} ${Math.floor(desc.start.y)} `;
+  for (let i = 0; i < desc.stops.length; i++) {
+
+  }
+  path += `L${Math.floor(desc.end.x)} ${Math.floor(desc.end.y)}`;
+
+  return path;
 }
