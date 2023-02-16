@@ -213,8 +213,11 @@ function draw() {
     let plugHolder = start.gate.elem.children[(start.port.input)?0:1];
     let plug = plugHolder.children[start.port.i];
     let box = plug.getBoundingClientRect();
-
-    start = {x: box.x + box.width / 2, y: box.y + box.height / 2};
+    
+    start = {
+      x: box.x + box.width / 2 - mainbox.x, 
+      y: box.y + box.height / 2 - mainbox.y
+    };
 
     let path = generatePath({start, stops, end});
 
@@ -497,11 +500,11 @@ function removeFromID(id) {
 
 //Takes an object with a start, stops, and end point and generates a smooth svg path
 function generatePath(desc) {
-  let path = `M${Math.floor(desc.start.x)} ${Math.floor(desc.start.y)} `;
+  let path = `M${Math.round(desc.start.x)} ${Math.round(desc.start.y)} `;
   for (let i = 0; i < desc.stops.length; i++) {
 
   }
-  path += `L${Math.floor(desc.end.x)} ${Math.floor(desc.end.y)}`;
+  path += `L${Math.round(desc.end.x)} ${Math.round(desc.end.y)}`;
 
   return path;
 }
