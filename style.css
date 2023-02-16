@@ -191,6 +191,7 @@ Wires
   stroke: var(--wire-off);
   stroke-width: calc(var(--unit) * 0.15);
   z-index: 100;
+  transform: translate(-4px, -5px);
 }
 
 /*
