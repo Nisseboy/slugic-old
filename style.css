@@ -17,7 +17,7 @@ body {
   --footer-bg: #1d1d1d;
   --border: #6b6b6d;
   --fg: #ddd;
-  --text: blanchedalmond;
+  --text: #ddd;
   --selected: #1eaec4;
   --selected-middle: #1eaec422;
 
@@ -71,6 +71,7 @@ The main area and the footer as well as the header
 
   overflow: hidden;
 }
+
 .footer {
   width: 95%;
   height: calc(var(--unit) * 1.4);
@@ -80,33 +81,9 @@ The main area and the footer as well as the header
   align-items: center;
   flex-wrap: wrap;
 }
-.gate-info {
-  height: var(--unit);
 
-  color: var(--fg);
-
-  display: flex;
-}
-.gate-info input {
-  height: 100%;
+.header {
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-
-  text-transform: uppercase;
-  font-family: inherit;
-  font-weight: inherit;
-  color: var(--text);
-
-  background-color: var(--main-bg);
-  border: 2px solid var(--border);
-}
-#gate-info-hex {
-  width: 5rem;
-  margin-left: 10px;
-}
-#gate-info-color {
-  width: var(--unit);
 }
 
 
@@ -197,7 +174,8 @@ Wires
 /*
 Styles for selected elements and selection box
 */
-.selected {
+.selected,
+.gate:hover {
   outline: 2px solid var(--selected);
   outline-offset: 4px;
 }

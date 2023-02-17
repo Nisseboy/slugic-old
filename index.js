@@ -176,25 +176,29 @@ function draw() {
 
 
     gateElem.addEventListener("mousedown", e => {
-      let coords = getCoords(e);
-      let gate = {
-        x: coords.x / unit,
-        y: coords.y / unit,
-        type: i,
-        inputs: [],
-        outputs: [],
-        id: generateID(),
-        isDragged: true,
-      }
-      currentGate.gates[gate.id] = gate;
+      if (e.button == 0) {
+        let coords = getCoords(e);
+        let gate = {
+          x: coords.x / unit,
+          y: coords.y / unit,
+          type: i,
+          inputs: [],
+          outputs: [],
+          id: generateID(),
+          isDragged: true,
+        }
+        currentGate.gates[gate.id] = gate;
 
-      draw();
-      let box = gate.elem.getBoundingClientRect();
-      gate.x -= box.width / 2 / unit;
-      gate.y -= box.height / 2 / unit;
-      draw();
-      
-      startDrag(e, gate);
+        draw();
+        let box = gate.elem.getBoundingClientRect();
+        gate.x -= box.width / 2 / unit;
+        gate.y -= box.height / 2 / unit;
+        draw();
+        
+        startDrag(e, gate);
+      } else if (e.button == 2) {
+        
+      }
     });
 
 
@@ -267,29 +271,17 @@ function changeGate(type) {
   let gateType = gates.custom[type];
   if (!gateType) return;
 
-  let header = document.getElementsByClassName("gate-info")[0];
+  let header = document.getElementsByClassName("gate")[0];
 
   currentGate = gateType;
   currentGateName = type;
-  header.children[0].value = type;
-  header.children[1].value = gateType.color;
-  header.children[2].value = gateType.color;
+  
+  header.style.backgroundColor = gateType.color;
+  header.style.setProperty("--name-length", Math.ceil(type.length / 2) * 2);
+  header.innerText = type;
 
   draw();
 }
-//Is triggered when something in the header changes
-function renameGate(newName) {
-  console.log(newName);
-}
-function recolorGate(newColor) {
-  let header = document.getElementsByClassName("gate-info")[0];
-  header.children[1].value = newColor;
-  header.children[2].value = newColor;
-
-  currentGate.color = newColor;
-  draw();
-}
-
 
 //Dragging objects (They must have x, y, elem properties)
 let dragged = [];
@@ -416,7 +408,8 @@ function whileSelect(e) {
       x1 < box.x + box.width - mainbox.x &&
       x2 > box.x - mainbox.x &&
       y1 < box.y + box.height - mainbox.y &&
-      y2 > box.y - mainbox.y
+      y2 > box.y - mainbox.y &&
+      !elem.classList.contains("in-footer")
     ) {
       elem.classList.add("selected");
     }
