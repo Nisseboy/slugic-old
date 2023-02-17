@@ -83,9 +83,31 @@ The main area and the footer as well as the header
 }
 
 .header {
-  margin: 0;
+  --color: #ddd;
+  display: flex;
+  align-items: center;
 }
+.header div {
+  background-color: var(--color);
+}
+.header i {
+  height: var(--unit);
+  background-color: var(--color);
+  margin-left: calc(var(--unit) * 0.1);
 
+  border: 3px solid rgb(0 0 0 / 0.4);
+  border-radius: 0 calc(var(--unit) * 0.2) calc(var(--unit) * 0.2) 0;
+
+  display: flex;
+  align-items: center;
+  font-size: calc(var(--unit) * 0.6);
+  padding: calc(var(--unit) * 0.2);
+
+  box-sizing: border-box;
+
+  color: var(--text);
+  font-weight: 100;
+}
 
 /*
 Gates

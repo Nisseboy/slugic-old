@@ -160,46 +160,17 @@ function draw() {
   for (let i in gates.all) {
     let gateType = gates.all[i];
 
-    if (drawnGatesInFooter[i]) {
-      let gateElem = drawnGatesInFooter[i];
-      gateElem.innerText = i;
+    let gateElem = drawnGatesInFooter[i];
+    if (gateElem) {
       gateElem.style.backgroundColor = gateType.color;
-
+      gateElem.innerText = i;
+      gateElem.style.setProperty("--name-length", Math.ceil(gateType.name.length / 2) * 2);
       continue;
     }
 
-    let gateElem = document.createElement("div");
-    gateElem.className = "gate in-footer";
-    gateElem.style.backgroundColor = gateType.color;
-    gateElem.style.setProperty("--name-length", Math.ceil(i.length / 2) * 2);
-    gateElem.innerText = i;
+    gateElem = createShellGate(gateType);
 
-
-    gateElem.addEventListener("mousedown", e => {
-      if (e.button == 0) {
-        let coords = getCoords(e);
-        let gate = {
-          x: coords.x / unit,
-          y: coords.y / unit,
-          type: i,
-          inputs: [],
-          outputs: [],
-          id: generateID(),
-          isDragged: true,
-        }
-        currentGate.gates[gate.id] = gate;
-
-        draw();
-        let box = gate.elem.getBoundingClientRect();
-        gate.x -= box.width / 2 / unit;
-        gate.y -= box.height / 2 / unit;
-        draw();
-        
-        startDrag(e, gate);
-      } else if (e.button == 2) {
-        
-      }
-    });
+    gateElem.addEventListener("mousedown", e => {footerGateDown(e, gateType)});
 
 
     footerElem.appendChild(gateElem);
@@ -233,6 +204,45 @@ function draw() {
   }
   //Adding and moving placed wires
 
+}
+
+//Creates a gate element without any plugs or shit
+function createShellGate(gateType) {
+  let gateElem = document.createElement("div");
+  gateElem.className = "gate in-footer";
+  gateElem.style.backgroundColor = gateType.color;
+  gateElem.style.setProperty("--name-length", Math.ceil(gateType.name.length / 2) * 2);
+  gateElem.innerText = gateType.name;
+
+  return gateElem;
+}
+
+//Called when user presses on a gate in the footer
+function footerGateDown(e, gateType) {
+  let i = gateType.name;
+  if (e.button == 0) {
+    let coords = getCoords(e);
+    let gate = {
+      x: coords.x / unit,
+      y: coords.y / unit,
+      type: i,
+      inputs: [],
+      outputs: [],
+      id: generateID(),
+      isDragged: true,
+    }
+    currentGate.gates[gate.id] = gate;
+
+    draw();
+    let box = gate.elem.getBoundingClientRect();
+    gate.x -= box.width / 2 / unit;
+    gate.y -= box.height / 2 / unit;
+    draw();
+    
+    startDrag(e, gate);
+  } else if (e.button == 2) {
+    
+  }
 }
 
 //Loading gates
@@ -271,14 +281,13 @@ function changeGate(type) {
   let gateType = gates.custom[type];
   if (!gateType) return;
 
-  let header = document.getElementsByClassName("gate")[0];
-
   currentGate = gateType;
   currentGateName = type;
   
-  header.style.backgroundColor = gateType.color;
-  header.style.setProperty("--name-length", Math.ceil(type.length / 2) * 2);
-  header.innerText = type;
+  let header = document.getElementsByClassName("header")[0];
+  header.style.setProperty("--color", gateType.color);
+  header.children[0].style.setProperty("--name-length", Math.ceil(gateType.name.length / 2) * 2);
+  header.children[0].innerText = gateType.name;
 
   draw();
 }
