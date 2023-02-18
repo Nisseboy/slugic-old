@@ -21,9 +21,37 @@
       <div class="marker"></div>
       <div class="selection"></div>
     </div>
-    <div class="footer">
+    <div class="footer"></div>
 
+    <div class="popups">
+      <div class="popup popup-gate">
+        <div class="input-holder">
+          <input type="text">
+        </div>
+        <div class="input-holder color-picker">
+          <div class="color-preview"></div>
+          <div class="color-sliders">
+            <div class="color-slider">
+              <label for="color-h">H</label>
+              <input type="range" id="color-h">
+            </div>
+            <div class="color-slider">
+              <label for="color-s">S</label>
+              <input type="range" id="color-s">
+            </div>
+            <div class="color-slider">
+              <label for="color-l">L</label>
+              <input type="range" id="color-l">
+            </div>
+          </div>
+        </div>
+        <div class="input-holder actions">
+          <button class="action-button cancel">cancel</button>
+          <button class="action-button confirm">confirm</button>
+        </div>
+      </div>
     </div>
+
     <button class="theme-switcher fa-sharp fa-solid fa-sun"></button>
   </main>
   <script src="gate.js"></script>

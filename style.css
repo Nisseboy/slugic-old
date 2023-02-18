@@ -46,6 +46,40 @@ body.light-theme {
   --shadow-light: #eee;
 }
 
+
+/*
+Making everything consistent
+*/
+*,
+*::before,
+*::after {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track,
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  background-color: var(--wire-off); 
+  border-radius: 4px;
+}
+input[type="range"]::-webkit-slider-thumb,
+input[type="range"]::-moz-range-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  border-radius: 50%;
+
+  background-color: var(--wire-on); 
+}
+
 main {
   aspect-ratio: 16 / 9;
 
@@ -107,6 +141,8 @@ The main area and the footer as well as the header
 
   color: var(--text);
   font-weight: 100;
+
+  cursor: pointer;
 }
 
 /*
@@ -213,6 +249,124 @@ Styles for selected elements and selection box
   z-index: 10;
 
   pointer-events: none;
+}
+
+/*
+Popups
+*/
+.popups {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background-color: rgb(0 0 0 / 0.4);
+
+  text-transform: uppercase;
+  font-size: calc(var(--unit) / 2);
+  color: var(--text);
+  font-weight: 700;
+}
+.popup {
+  width: calc(var(--unit) * 8);
+  height: calc(var(--unit) * 4.5);
+
+  background-color: var(--main-bg);
+
+  border: 4px solid rgb(255 255 255 / 0.2);
+  border-right: 4px solid rgb(0 0 0 / 0.2);
+  border-bottom: 4px solid rgb(0 0 0 / 0.2);
+}
+.input-holder {
+  width: 96%;
+  margin: 2%;
+
+  display: flex;
+  justify-content: space-around;
+  gap: 1em;
+}
+.input-holder > input {
+  flex-grow: 1;
+
+  text-transform: inherit;
+  font-size: inherit;
+  color: inherit;
+
+  background-color: inherit;
+
+  border: 3px solid rgb(0 0 0 / 0.2);
+  border-right: 3px solid rgb(255 255 255 / 0.2);
+  border-bottom: 3px solid rgb(255 255 255 / 0.2);
+
+  outline: none;
+
+  font-weight: 700;
+}
+.color-picker {
+  width: 96%;
+  height: 50%;
+  margin: 2%;
+  display: flex;
+}
+.color-preview {
+  height: 100%;
+  aspect-ratio: 1 / 1;
+
+  background-color: #e7324b;
+
+  border-radius: 14%;
+  border: 3px solid rgb(255 255 255 / 0.2);
+  border-right: 3px solid rgb(0 0 0 / 0.2);
+  border-bottom: 3px solid rgb(0 0 0 / 0.2);
+}
+.color-sliders {
+  width: 80%;
+  height: 100%;
+}
+.color-slider {
+  width: 100%;
+  height: 33%;
+  display: flex;
+  align-items: center;
+  gap: 5%;
+}
+.color-slider input {
+  width: 80%;
+}
+.actions {
+  height: 20%;
+  gap: 3%;
+}
+.action-button { 
+  width: 50%;
+  height: 100%;
+
+  border: 3px solid rgb(255 255 255 / 0.2);
+  border-right: 3px solid rgb(0 0 0 / 0.2);
+  border-bottom: 3px solid rgb(0 0 0 / 0.2);
+
+  text-transform: uppercase;
+  font-size: calc(var(--unit) / 3);
+  letter-spacing: calc(var(--unit) * 0.3 - 1ch);
+  color: var(--text);
+  font-weight: 700;
+}
+.action-button.cancel {
+  background-color: var(--border);
+}
+.action-button.confirm {
+  background-color: var(--selected);
+}
+
+.popup-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 
