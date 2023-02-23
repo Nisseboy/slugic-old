@@ -81,7 +81,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 main {
-  aspect-ratio: 16 / 9;
+  width: min(calc(100vh / 9 * 16), 100vw);
+  height: min(calc(100vw / 16 * 9), 100vh);
 
   display: flex;
   flex-direction: column;
@@ -90,6 +91,8 @@ main {
   gap: 0.5rem;
 
   background-color: var(--main-bg);
+
+  position: relative;
 }
 
 /*
