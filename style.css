@@ -66,9 +66,9 @@ input[type="range"] {
 }
 input[type="range"]::-webkit-slider-runnable-track,
 input[type="range"]::-moz-range-track {
-  height: 6px;
+  height: calc(var(--unit) * 0.2);
   background-color: var(--wire-off); 
-  border-radius: 4px;
+  border-radius: calc(var(--unit) * 0.1);
 }
 input[type="range"]::-webkit-slider-thumb,
 input[type="range"]::-moz-range-thumb {
@@ -76,6 +76,9 @@ input[type="range"]::-moz-range-thumb {
   appearance: none;
   border: none;
   border-radius: 50%;
+
+  width: calc(var(--unit) * 0.5);
+  height: calc(var(--unit) * 0.5);
 
   background-color: var(--wire-on); 
 }
@@ -281,9 +284,9 @@ Popups
 
   background-color: var(--main-bg);
 
-  border: 4px solid rgb(255 255 255 / 0.2);
-  border-right: 4px solid rgb(0 0 0 / 0.2);
-  border-bottom: 4px solid rgb(0 0 0 / 0.2);
+  border: calc(var(--unit) * 0.1) solid rgb(255 255 255 / 0.2);
+  border-right: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
+  border-bottom: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
 }
 .input-holder {
   width: 96%;
@@ -302,9 +305,9 @@ Popups
 
   background-color: inherit;
 
-  border: 3px solid rgb(0 0 0 / 0.2);
-  border-right: 3px solid rgb(255 255 255 / 0.2);
-  border-bottom: 3px solid rgb(255 255 255 / 0.2);
+  border: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
+  border-right: calc(var(--unit) * 0.1) solid rgb(255 255 255 / 0.2);
+  border-bottom: calc(var(--unit) * 0.1) solid rgb(255 255 255 / 0.2);
 
   outline: none;
 
@@ -323,9 +326,9 @@ Popups
   background-color: #e7324b;
 
   border-radius: 14%;
-  border: 3px solid rgb(255 255 255 / 0.2);
-  border-right: 3px solid rgb(0 0 0 / 0.2);
-  border-bottom: 3px solid rgb(0 0 0 / 0.2);
+  border: calc(var(--unit) * 0.1) solid rgb(255 255 255 / 0.2);
+  border-right: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
+  border-bottom: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
 }
 .color-sliders {
   width: 80%;
@@ -349,9 +352,9 @@ Popups
   width: 50%;
   height: 100%;
 
-  border: 3px solid rgb(255 255 255 / 0.2);
-  border-right: 3px solid rgb(0 0 0 / 0.2);
-  border-bottom: 3px solid rgb(0 0 0 / 0.2);
+  border: calc(var(--unit) * 0.1) solid rgb(255 255 255 / 0.2);
+  border-right: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
+  border-bottom: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
 
   text-transform: uppercase;
   font-size: calc(var(--unit) / 3);
