@@ -17,18 +17,15 @@ body {
   --footer-bg: #1d1d1d;
   --border: #6b6b6d;
   --fg: #ddd;
-  --text: #ddd;
   --selected: #1eaec4;
   --selected-middle: #1eaec422;
+
+  --gate-border: rgb(0 0 0 / 0.4);
 
   --wire-off: #321a1f;
   --wire-on: #e7324b;
 
-  --shadow-sizing: 3px;
-  --shadow-dark: #161622;
-  --shadow-light: #363652;
-  --shadow-up: var(--shadow-sizing) var(--shadow-sizing) var(--shadow-sizing) var(--shadow-dark), calc(var(--shadow-sizing) * -1) calc(var(--shadow-sizing) * -1) var(--shadow-sizing) var(--shadow-light);
-  --shadow-down: inset var(--shadow-sizing) var(--shadow-sizing) var(--shadow-sizing) var(--shadow-dark), inset calc(var(--shadow-sizing) * -1) calc(var(--shadow-sizing) * -1) var(--shadow-sizing) var(--shadow-light);
+  --opposite: #ddd;
 
   position: relative;
   margin: auto;
@@ -37,13 +34,14 @@ body {
   font-weight: 700;
 }
 body.light-theme {
-  --main-bg: #363538;
-  --footer-bg: #1d1d1d;
-  --border: #6b6b6d;
+  --main-bg: #e7e5e5;
+  --footer-bg: #a5a5a5;
+  --border: #b9b9b9;
   --fg: #ddd;
 
-  --shadow-dark: #ccc;
-  --shadow-light: #eee;
+  --gate-border: rgb(255 255 255 / 0.2);
+
+  --opposite: #000;
 }
 
 
@@ -146,7 +144,7 @@ The main area and the footer as well as the header
 
   box-sizing: border-box;
 
-  color: var(--text);
+  color: var(--fg);
   font-weight: 100;
 
   cursor: pointer;
@@ -170,13 +168,13 @@ Gates
   user-select: none;
 
   letter-spacing: calc(var(--unit) / 2 - 1ch);
-  color: var(--text);
+  color: var(--fg);
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  border: 3px solid rgb(0 0 0 / 0.4);
+  border: 3px solid var(--gate-border);
   box-sizing: border-box;
 }
 
@@ -276,7 +274,7 @@ Popups
 
   text-transform: uppercase;
   font-size: 1rem;
-  color: var(--text);
+  color: var(--fg);
   font-weight: 700;
 }
 .popup {
@@ -362,7 +360,7 @@ Popups
   text-transform: uppercase;
   font-size: 1.5em;
   letter-spacing: 0.1em;
-  color: var(--text);
+  color: var(--fg);
   font-weight: 700;
 }
 .action-button.cancel {
@@ -391,7 +389,7 @@ Theme switcher
   cursor: pointer;
 
   background: none;
-  color: var(--fg);
+  color: var(--opposite);
   border: none;
 
   font-size: 20px;
