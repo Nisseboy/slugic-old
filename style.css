@@ -66,9 +66,9 @@ input[type="range"] {
 }
 input[type="range"]::-webkit-slider-runnable-track,
 input[type="range"]::-moz-range-track {
-  height: calc(var(--unit) * 0.2);
+  height: 8px;
   background-color: var(--wire-off); 
-  border-radius: calc(var(--unit) * 0.1);
+  border-radius: 4px;
 }
 input[type="range"]::-webkit-slider-thumb,
 input[type="range"]::-moz-range-thumb {
@@ -77,20 +77,19 @@ input[type="range"]::-moz-range-thumb {
   border: none;
   border-radius: 50%;
 
-  width: calc(var(--unit) * 0.5);
-  height: calc(var(--unit) * 0.5);
+  width: 16px;
+  height: 16px;
 
   background-color: var(--wire-on); 
 }
 
 main {
-  width: min(calc(100vh / 9 * 16), 100vw);
-  height: min(calc(100vw / 16 * 9), 100vh);
+  width: 100vw;
+  height: 100vh;
 
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 0.5rem;
 
   background-color: var(--main-bg);
@@ -102,8 +101,9 @@ main {
 The main area and the footer as well as the header
 */
 .main {
-  width: 95%;
-  height: 87.5%;
+  height: calc(95vw / 16 * 9);
+  max-height: 95vh;
+  aspect-ratio: 16 / 9;
 
   border: 5px solid var(--border);
 
@@ -120,12 +120,13 @@ The main area and the footer as well as the header
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  margin-bottom: 0.5rem;
 }
 
 .header {
-  --color: #ddd;
   display: flex;
   align-items: center;
+  margin-top: 0.5rem;
 }
 .header div {
   background-color: var(--color);
@@ -274,19 +275,19 @@ Popups
   background-color: rgb(0 0 0 / 0.4);
 
   text-transform: uppercase;
-  font-size: calc(var(--unit) / 2);
+  font-size: 1rem;
   color: var(--text);
   font-weight: 700;
 }
 .popup {
-  width: calc(var(--unit) * 8);
-  height: calc(var(--unit) * 4.5);
+  width: 24em;
+  height: 16em;
 
   background-color: var(--main-bg);
 
-  border: calc(var(--unit) * 0.1) solid rgb(255 255 255 / 0.2);
-  border-right: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
-  border-bottom: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
+  border: 4px solid rgb(255 255 255 / 0.2);
+  border-right: 4px solid rgb(0 0 0 / 0.2);
+  border-bottom: 4px solid rgb(0 0 0 / 0.2);
 }
 .input-holder {
   width: 96%;
@@ -305,9 +306,9 @@ Popups
 
   background-color: inherit;
 
-  border: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
-  border-right: calc(var(--unit) * 0.1) solid rgb(255 255 255 / 0.2);
-  border-bottom: calc(var(--unit) * 0.1) solid rgb(255 255 255 / 0.2);
+  border: 4px solid rgb(0 0 0 / 0.2);
+  border-right: 4px solid rgb(255 255 255 / 0.2);
+  border-bottom: 4px solid rgb(255 255 255 / 0.2);
 
   outline: none;
 
@@ -323,12 +324,12 @@ Popups
   height: 100%;
   aspect-ratio: 1 / 1;
 
-  background-color: #e7324b;
+  background-color: var(--color);
 
   border-radius: 14%;
-  border: calc(var(--unit) * 0.1) solid rgb(255 255 255 / 0.2);
-  border-right: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
-  border-bottom: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
+  border: 4px solid rgb(255 255 255 / 0.2);
+  border-right: 4px solid rgb(0 0 0 / 0.2);
+  border-bottom: 4px solid rgb(0 0 0 / 0.2);
 }
 .color-sliders {
   width: 80%;
@@ -352,13 +353,15 @@ Popups
   width: 50%;
   height: 100%;
 
-  border: calc(var(--unit) * 0.1) solid rgb(255 255 255 / 0.2);
-  border-right: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
-  border-bottom: calc(var(--unit) * 0.1) solid rgb(0 0 0 / 0.2);
+  border: 4px solid rgb(255 255 255 / 0.2);
+  border-right: 4px solid rgb(0 0 0 / 0.2);
+  border-bottom: 4px solid rgb(0 0 0 / 0.2);
+
+  cursor: pointer;
 
   text-transform: uppercase;
-  font-size: calc(var(--unit) / 3);
-  letter-spacing: calc(var(--unit) * 0.3 - 1ch);
+  font-size: 1.5em;
+  letter-spacing: 0.1em;
   color: var(--text);
   font-weight: 700;
 }
