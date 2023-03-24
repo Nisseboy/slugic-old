@@ -8,6 +8,7 @@ let step = 4;
 let previewWire = {active: false};
 
 //Defining DOM Elements
+const headerElem = document.getElementsByClassName("header")[0];
 const mainElem = document.getElementsByClassName("main")[0];
 const footerElem = document.getElementsByClassName("footer")[0];
 const previewWireElem = document.getElementsByClassName("wire preview")[0];
@@ -17,7 +18,7 @@ const selectionElem = document.getElementsByClassName("selection")[0];
 const themeSwitcherElem = document.getElementsByClassName("theme-switcher")[0];
 
 
-//The settings menu
+//The theme switcher
 themeSwitcherElem.onclick = e => {
   document.body.classList.toggle("light-theme");
   themeSwitcherElem.classList.toggle("fa-sun");
@@ -39,6 +40,7 @@ let drawnGatesInFooter = {};
 
 function draw() {
   let mainbox = mainElem.getBoundingClientRect();
+  let mainborderwidth = parseInt(getComputedStyle(mainElem).getPropertyValue('border-left-width'));
   //Adding and moving placed gates
   for (let i in currentGate.gates) {
     let gate = currentGate.gates[i];
@@ -190,8 +192,8 @@ function draw() {
     let box = plug.getBoundingClientRect();
     
     start = {
-      x: box.x + box.width / 2 - mainbox.x, 
-      y: box.y + box.height / 2 - mainbox.y
+      x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
+      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
     };
 
     let path = generatePath({start, stops, end});
@@ -204,6 +206,21 @@ function draw() {
   }
   //Adding and moving placed wires
 
+}
+
+//Call to invalidate all drawn shit
+function redraw() {
+  for (let i in drawnGates) {
+    drawnGates[i].remove();
+  }
+  drawnGates = {};
+  for (let i in drawnGatesInFooter) {
+    drawnGatesInFooter[i].remove();
+  }
+  drawnGatesInFooter = {};
+
+  changeGate(currentGateName);
+  draw();
 }
 
 //Creates a gate element without any plugs or shit
@@ -284,12 +301,36 @@ function changeGate(type) {
   currentGate = gateType;
   currentGateName = type;
   
-  let header = document.getElementsByClassName("header")[0];
-  header.style.setProperty("--color", gateType.color);
-  header.children[0].style.setProperty("--name-length", Math.ceil(gateType.name.length / 2) * 2);
-  header.children[0].innerText = gateType.name;
+  headerElem.style.setProperty("--color", gateType.color);
+  headerElem.children[0].style.setProperty("--name-length", Math.ceil(gateType.name.length / 2) * 2);
+  headerElem.children[0].innerText = gateType.name;
 
   draw();
+}
+
+//Shows the gate creation menu and allows the user to edit the current gate (is called when the edit button in the header is clicked)
+async function editGate() {
+  let res = await popupGate(currentGate).then((res)=>{return res}, ()=>{});
+  
+  if (!res) return;
+  currentGate.color = res.color;
+
+  for (let i in gates.all) {
+    let gateType = gates.all[i];
+    for (let j in gateType.gates) {
+      let gate = gateType.gates[j];
+      if (gate.type == currentGate.name)
+        gate.type = res.name;
+    }
+  }
+  delete gates.custom[currentGateName];
+  delete gates.all[currentGateName];
+  gates.custom[res.name] = currentGate;
+  gates.all[res.name] = currentGate;
+  currentGate.name = res.name;
+  currentGateName = res.name;
+
+  redraw();
 }
 
 //Dragging objects (They must have x, y, elem properties)
@@ -510,3 +551,20 @@ function generatePath(desc) {
 
   return path;
 }
+
+
+//Preventing the user from leaving with unsaved progress
+window.addEventListener("beforeunload", function (e) {
+  //TODO: check if there's any unsaved gates
+  let allSaved = true;
+  if (allSaved) {
+    return undefined;
+  }
+  
+  var confirmationMessage = 'You have unsaved changes, are you sure you want to leave?';
+
+  //TODO: Add popup to tell you all the unsaved gates
+
+  (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+  return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+});

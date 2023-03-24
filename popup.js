@@ -1,17 +1,16 @@
+//Global variables for elements
+const popupsElem = document.getElementsByClassName("popups")[0];
+const popupGateElem = document.getElementsByClassName("popup-gate")[0];
+
+
 //Make color pickers work
 let colorPickers = document.getElementsByClassName("color-picker");
 for (let i in Array.from(colorPickers)) {
   let picker = colorPickers[i];
   let sliders = picker.getElementsByClassName("color-slider");
   
-  const updateSliders = () => {
-    let color = picker.style.getPropertyValue("--color");
-    let [h, s, l] = HEXToHSL(color);
 
-    sliders[0].children[1].value = h / 3.6;
-    sliders[1].children[1].value = s;
-    sliders[2].children[1].value = l;
-  }
+  updateSliders(picker);
 
   const updateColor = () => {
     let h = sliders[0].children[1].value * 3.6;
@@ -22,7 +21,6 @@ for (let i in Array.from(colorPickers)) {
     picker.style.setProperty("--color", color);
   }
 
-  updateSliders();
   
   for (let i in Array.from(sliders)) {
     let slider = sliders[i].children[1];
@@ -31,7 +29,82 @@ for (let i in Array.from(colorPickers)) {
     });
   }
 }
+function updateSliders(picker) {
+  let sliders = picker.getElementsByClassName("color-slider");
 
+  let color = picker.style.getPropertyValue("--color");
+  let [h, s, l] = HEXToHSL(color);
+
+  sliders[0].children[1].value = h / 3.6;
+  sliders[1].children[1].value = s;
+  sliders[2].children[1].value = l;
+}
+
+
+
+async function popupGate(gate) {
+  popupsElem.style.display = "flex";
+  popupGateElem.style.display = "flex";
+
+  let gateName = popupGateElem.getElementsByClassName("input-holder")[0].children[0];
+  gateName.value = gate.name;
+  gateName.select();
+
+  let gateColor = popupGateElem.getElementsByClassName("color-picker")[0];
+  gateColor.style.setProperty("--color", gate.color);
+  updateSliders(gateColor);
+  
+  let cancelButton = popupGateElem.getElementsByClassName("action-button")[0];
+  let confirmButton = popupGateElem.getElementsByClassName("action-button")[1];
+
+  return createPromise(cancelButton, confirmButton, ()=>{return {name: gateName.value, color: gateColor.style.getPropertyValue("--color")}});
+}
+
+
+function createPromise(cancelButton, confirmButton, getResponse) {
+  let decided = false;
+  let verdict = true;
+
+  function cancelHandler() {
+    decided = true;
+    verdict = false;
+  }
+  function confirmHandler() {
+    decided = true;
+    verdict = true;
+  }
+  function keyHandler(e) {
+    if (e.key == "Enter") {
+      confirmHandler();
+    }
+    if (e.key == "Escape") {
+      cancelHandler();
+    }
+  }
+
+  cancelButton.addEventListener("click", cancelHandler);
+  confirmButton.addEventListener("click", confirmHandler);
+  document.addEventListener("keydown", keyHandler);
+
+  return new Promise((resolve, reject) => {
+    let interval = setInterval(()=>{
+      if (decided) {
+        cancelButton.removeEventListener("click", cancelHandler);
+        confirmButton.removeEventListener("click", confirmHandler);
+        document.removeEventListener("keydown", keyHandler);
+        
+        if (verdict == true) 
+          resolve(getResponse());
+        else 
+          reject();
+        
+        popupsElem.style.display = "none";
+        popupGateElem.style.display = "none";
+        clearInterval(interval);
+      }
+    }, 1000 / 60);
+  });
+}
 
 
 //From https://css-tricks.com/converting-color-spaces-in-javascript/

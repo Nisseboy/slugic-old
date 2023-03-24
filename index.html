@@ -12,7 +12,7 @@
   <main>
     <div class="header">
       <div class="gate in-footer"></div>
-      <i class="fa-solid fa-pen-to-square"></i>
+      <i class="fa-solid fa-pen-to-square" onclick="editGate()"></i>
     </div>
     <div class="main">
       <svg class="wires">
@@ -24,12 +24,14 @@
     <div class="footer"></div>
 
     <div class="popups" style="display: none">
-      <div class="popup popup-gate">
+      <div class="popup popup-gate" style="display: none">
         <div class="input-holder">
           <input type="text">
         </div>
         <div class="input-holder color-picker" style="--color: #e7324b">
-          <div class="color-preview"></div>
+          <div class="color-preview">
+            gate name
+          </div>
           <div class="color-sliders">
             <div class="color-slider">
               <label for="color-h">H</label>
