@@ -23,6 +23,9 @@ const themeSwitcherElem = document.getElementsByClassName("theme-switcher")[0];
 let mainbox;
 let mainborderwidth;
 
+let width;
+let height;
+
 //The theme switcher
 themeSwitcherElem.onclick = e => {
   document.body.classList.toggle("light-theme");
@@ -35,6 +38,9 @@ function resize() {
   mainbox = mainElem.getBoundingClientRect();
   unit = mainbox.height / sizeDivisions;
   document.body.style.setProperty("--unit", unit + "px");
+
+  height = sizeDivisions;
+  width = sizeDivisions / 9 * 16;
 }
 resize();
 window.onresize = resize;
@@ -43,10 +49,12 @@ window.onresize = resize;
 //Drawing the gates
 let drawnGates = {};
 let drawnGatesInFooter = {};
+let drawnWires = {};
 
 function draw() {
   mainbox = mainElem.getBoundingClientRect();
   mainborderwidth = parseInt(getComputedStyle(mainElem).getPropertyValue('border-left-width'));
+  
   //Adding and moving placed gates
   for (let i in currentGate.gates) {
     let gate = currentGate.gates[i];
@@ -55,9 +63,8 @@ function draw() {
       drawnGates[i].style.left = `calc(var(--unit) * ${gate.x})`;
       drawnGates[i].style.top = `calc(var(--unit) * ${gate.y})`;
       continue;
-    } else {
-      
-    }
+    } 
+
     let gateElem = document.createElement("div");
 
     let inputLen = gateType.inputs.length;
@@ -142,11 +149,10 @@ function draw() {
   //Moving preview wire
   if (previewWire.active) {
     let start = previewWire.start;
-    
     let stops = previewWire.stops;
     let end = previewWire.end;
 
-    let plugHolder = start.gate.elem.children[(start.port.input)?0:1];
+    let plugHolder = currentGate.gates[start.gate].elem.children[(start.port.input)?0:1];
     let plug = plugHolder.children[start.port.i];
     let box = plug.getBoundingClientRect();
     
@@ -164,7 +170,51 @@ function draw() {
     previewWireElem.style.display = "none";
     anglesElem.replaceChildren();
   }
+
   //Adding and moving placed wires
+  for (let i in currentGate.wires) {
+    let wire = currentGate.wires[i];
+
+    if (drawnWires[i]) {
+      continue;
+    }
+    
+    let start = wire.start;
+    let stops = wire.stops;
+    let end = wire.end;
+    
+    let plugHolder = currentGate.gates[start.gate].elem.children[0];
+    let plug = plugHolder.children[start.port.i];
+    let box = plug.getBoundingClientRect();
+    start = {
+      x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
+      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
+    }
+
+    plugHolder = currentGate.gates[end.gate].elem.children[1];
+    plug = plugHolder.children[end.port.i];
+    box = plug.getBoundingClientRect();
+    end = {
+      x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
+      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
+    }
+
+    stops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
+
+    let path = generatePath({start, stops, end});
+    let wireElem = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    wireElem.classList.add("wire");
+    wireElem.setAttribute("d", path);
+
+    wiresElem.appendChild(wireElem);
+
+    drawnWires[i] = wireElem;
+  }
+
+  //Removing deleted gates
+  for (let i in drawnWires) {
+    let wire = drawnWires[i];
+  }
 
 }
 
@@ -396,7 +446,7 @@ function startWire(e, gate, port) {;
   document.addEventListener("mousemove", whileWire);
   document.addEventListener("mouseup", stopWire);
 
-  wireStart = {gate, port};
+  wireStart = {gate: gate.id, port};
   wireStops = [];
   
   whileWire(e);
@@ -409,7 +459,7 @@ function whileWire(e) {
   let underMouse = document.elementsFromPoint(e.clientX, e.clientY);
   let plugs = underMouse.filter(elem=>elem.classList.contains("plug"));
 
-  if (plugs.length != 0 && plugs[0].dataset.input != wireStart.port.input.toString() && plugs[0].dataset.gate != wireStart.gate.id) {
+  if (plugs.length != 0 && plugs[0].dataset.input != wireStart.port.input.toString() && plugs[0].dataset.gate != wireStart.gate) {
     let plug = plugs[0];
     let box = plug.getBoundingClientRect();
 
@@ -435,9 +485,34 @@ function stopWire(e) {
   if (e.button == 0) {
     previewWire.active = false;
 
-    draw();
+    let underMouse = document.elementsFromPoint(e.clientX, e.clientY);
+    let plugs = underMouse.filter(elem=>elem.classList.contains("plug"));
+  
+    if (plugs.length != 0 && plugs[0].dataset.input != wireStart.port.input.toString() && plugs[0].dataset.gate != wireStart.gate) {
+      let plug = plugs[0];
+      let gate = plug.dataset.gate;
+
+      let end = {gate: gate, port: {input: false, i: plug.dataset.i}};
+      let start = wireStart;
+
+      if (!start.input) {
+        start = end;
+        end = wireStart;
+      }
+
+      let wire = {
+        start: start,
+        stops: wireStops.map((elem, i) => {return {x: elem.x / unit, y: elem.y / unit}}),
+        end: end,
+        id: generateID()
+      };
+
+      currentGate.wires[wire.id] = wire;
+    }
     document.removeEventListener("mousemove", whileWire);
     document.removeEventListener("mouseup", stopWire);
+
+    draw();
   } else if (e.button == 1) {
     wireStops.push(coords);
   }
