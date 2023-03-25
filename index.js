@@ -573,12 +573,23 @@ function removeFromID(id) {
 
 //Takes an object with a start, stops, and end point and generates a smooth svg path
 function generatePath(desc) {
-  let path = `M${Math.round(desc.start.x)} ${Math.round(desc.start.y)} `;
-  for (let i = 0; i < desc.stops.length; i++) {
-    let stop = desc.stops[i];
-    path += `L${Math.round(stop.x)} ${Math.round(stop.y)}`;
+  const rounding = 10;
+
+  let path = `M ${Math.round(desc.start.x)} ${Math.round(desc.start.y)} `; //Move to start of wire
+  let stops = [desc.start, ...desc.stops, desc.end]
+
+  for (let i = 1; i < stops.length - 1; i++) {
+    let last = stops[i - 1];
+    let stop = stops[i];  
+    let next = stops[i + 1];
+
+    let lastAngle = Math.atan2(stop.y - last.y, stop.x - last.x);
+    let nextAngle = Math.atan2(next.y - stop.y, next.x - stop.x);
+    
+    path += `L ${Math.round(stop.x - Math.cos(lastAngle) * rounding)} ${Math.round(stop.y - Math.sin(lastAngle) * rounding)} `; //Line to start of curve
+    path += `Q ${Math.round(stop.x)} ${Math.round(stop.y)} ${Math.round(stop.x + Math.cos(nextAngle) * rounding)} ${Math.round(stop.y + Math.sin(nextAngle) * rounding)} `; //Curve
   }
-  path += `L${Math.round(desc.end.x)} ${Math.round(desc.end.y)}`;
+  path += `L ${Math.round(desc.end.x)} ${Math.round(desc.end.y)} `; //Line to end of wire
 
   return path;
 }
