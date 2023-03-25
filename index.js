@@ -555,16 +555,6 @@ function generatePath(desc) {
 
 //Preventing the user from leaving with unsaved progress
 window.addEventListener("beforeunload", function (e) {
-  //TODO: check if there's any unsaved gates
-  let allSaved = true;
-  if (allSaved) {
-    return undefined;
-  }
+  //TODO: save
   
-  var confirmationMessage = 'You have unsaved changes, are you sure you want to leave?';
-
-  //TODO: Add popup to tell you all the unsaved gates
-
-  (e || window.event).returnValue = confirmationMessage; //Gecko + IE
-  return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
 });

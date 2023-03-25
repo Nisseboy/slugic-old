@@ -41,7 +41,6 @@ function updateSliders(picker) {
 }
 
 
-
 async function popupGate(gate) {
   popupsElem.style.display = "flex";
   popupGateElem.style.display = "flex";
@@ -57,7 +56,7 @@ async function popupGate(gate) {
   let cancelButton = popupGateElem.getElementsByClassName("action-button")[0];
   let confirmButton = popupGateElem.getElementsByClassName("action-button")[1];
 
-  return createPromise(cancelButton, confirmButton, ()=>{return {name: gateName.value, color: gateColor.style.getPropertyValue("--color")}});
+  return createPromise(cancelButton, confirmButton, ()=>{return {name: gateName.value.toLowerCase(), color: gateColor.style.getPropertyValue("--color")}});
 }
 
 
@@ -81,10 +80,17 @@ function createPromise(cancelButton, confirmButton, getResponse) {
       cancelHandler();
     }
   }
+  function clickHandler(e) {
+    if (e.target == popupsElem) {
+      decided = true;
+      verdict = false;
+    }
+  }
 
   cancelButton.addEventListener("click", cancelHandler);
   confirmButton.addEventListener("click", confirmHandler);
   document.addEventListener("keydown", keyHandler);
+  popupsElem.addEventListener("click", clickHandler);
 
   return new Promise((resolve, reject) => {
     let interval = setInterval(()=>{
@@ -92,6 +98,7 @@ function createPromise(cancelButton, confirmButton, getResponse) {
         cancelButton.removeEventListener("click", cancelHandler);
         confirmButton.removeEventListener("click", confirmHandler);
         document.removeEventListener("keydown", keyHandler);
+        popupsElem.removeEventListener("click", clickHandler);
         
         if (verdict == true) 
           resolve(getResponse());
