@@ -11,12 +11,17 @@ let previewWire = {active: false};
 const headerElem = document.getElementsByClassName("header")[0];
 const mainElem = document.getElementsByClassName("main")[0];
 const footerElem = document.getElementsByClassName("footer")[0];
+const wiresElem = document.getElementsByClassName("wires")[0];
 const previewWireElem = document.getElementsByClassName("wire preview")[0];
+
+const anglesElem = document.getElementsByClassName("angles")[0];
 
 const selectionElem = document.getElementsByClassName("selection")[0];
 
 const themeSwitcherElem = document.getElementsByClassName("theme-switcher")[0];
 
+let mainbox;
+let mainborderwidth;
 
 //The theme switcher
 themeSwitcherElem.onclick = e => {
@@ -27,7 +32,8 @@ themeSwitcherElem.onclick = e => {
 
 //Sizing
 function resize() {
-  unit = mainElem.getBoundingClientRect().height / sizeDivisions;
+  mainbox = mainElem.getBoundingClientRect();
+  unit = mainbox.height / sizeDivisions;
   document.body.style.setProperty("--unit", unit + "px");
 }
 resize();
@@ -39,8 +45,8 @@ let drawnGates = {};
 let drawnGatesInFooter = {};
 
 function draw() {
-  let mainbox = mainElem.getBoundingClientRect();
-  let mainborderwidth = parseInt(getComputedStyle(mainElem).getPropertyValue('border-left-width'));
+  mainbox = mainElem.getBoundingClientRect();
+  mainborderwidth = parseInt(getComputedStyle(mainElem).getPropertyValue('border-left-width'));
   //Adding and moving placed gates
   for (let i in currentGate.gates) {
     let gate = currentGate.gates[i];
@@ -67,58 +73,11 @@ function draw() {
     gateElem.style.setProperty("--num-outputs", outputLen);
     gateElem.style.backgroundColor = gateType.color;
 
-    let plugHolderLeft = document.createElement("div");
-    plugHolderLeft.className = "plug-holder left";
-    for (let j in gateType.inputs) {
-      let plug = document.createElement("div");
-      plug.className = "plug";
+    let left = createPlugHolder(gate, true, gateHeight);
+    let right = createPlugHolder(gate, false, gateHeight);
 
-      let baseY = gateHeight / inputLen * (j * 1 + 0.5);
-      let finalY;
-      if (baseY > gateHeight / 2) {
-        finalY = Math.floor(baseY * step) / step;
-      } else {
-        finalY = Math.floor(baseY * step) / step;
-      }
-      plug.style.top = `calc(${finalY - 0.25} * var(--unit))`;
-
-      plug.addEventListener("mousedown", e => {
-        startWire(e, gate, {
-          input: true,
-          i: j,
-        });
-      });
-
-      plugHolderLeft.appendChild(plug);
-    }
-
-    let plugHolderRight = document.createElement("div");
-    plugHolderRight.className = "plug-holder right";
-    for (let j in gateType.outputs) {
-      let plug = document.createElement("div");
-      plug.className = "plug";
-      
-      let baseY = gateHeight / outputLen * (j * 1 + 0.5);
-      let finalY;
-      if (baseY > gateHeight / 2) {
-        finalY = Math.ceil(baseY * step) / step;
-      } else {
-        finalY = Math.floor(baseY * step) / step;
-      }
-      plug.style.top = `calc(${finalY - 0.25} * var(--unit))`;
-
-      plug.addEventListener("mousedown", e => {
-        startWire(e, gate, {
-          input: false,
-          i: j,
-        });
-      });
-
-      plugHolderRight.appendChild(plug);
-    }
-
-    gateElem.prepend(plugHolderLeft);
-    gateElem.appendChild(plugHolderRight);
+    gateElem.prepend(left);
+    gateElem.appendChild(right);
     mainElem.appendChild(gateElem);
 
     gateElem.dataset.id = gate.id;
@@ -197,12 +156,13 @@ function draw() {
     };
 
     let path = generatePath({start, stops, end});
-
     previewWireElem.setAttribute("d", path);
-
     previewWireElem.style.display = "block";
+
+    showAngles({start, stops, end});
   } else {
     previewWireElem.style.display = "none";
+    anglesElem.replaceChildren();
   }
   //Adding and moving placed wires
 
@@ -221,6 +181,45 @@ function redraw() {
 
   changeGate(currentGateName);
   draw();
+}
+
+//Helper function for draw to create the plughodler + plugs for a gate on one side
+function createPlugHolder(gate, input, gateHeight) {
+  let gateType = gates.all[gate.type];
+  let i = gate.id;
+
+  let plugHolder = document.createElement("div");
+  plugHolder.className = `plug-holder ${input?"left":"right"}`;
+
+  for (let j in (input?gateType.inputs:gateType.outputs)) {
+    let plug = document.createElement("div");
+    plug.className = "plug";
+    
+    let baseY = gateHeight / (input?gateType.inputs:gateType.outputs).length * (j * 1 + 0.5);
+    
+    let finalY;
+    if (baseY > gateHeight / 2) {
+      finalY = Math.ceil(baseY * step) / step;
+    } else {
+      finalY = Math.floor(baseY * step) / step;
+    }
+    plug.style.top = `calc(${finalY - 0.25} * var(--unit))`;
+
+    plug.addEventListener("mousedown", e => {
+      startWire(e, gate, {
+        input: input,
+        i: j,
+      });
+    });
+
+    plugHolder.appendChild(plug);
+    
+    plug.dataset.i = j;
+    plug.dataset.input = input;
+    plug.dataset.gate = i;
+  }
+
+  return plugHolder;
 }
 
 //Creates a gate element without any plugs or shit
@@ -323,10 +322,12 @@ async function editGate() {
         gate.type = res.name;
     }
   }
+
   delete gates.custom[currentGateName];
   delete gates.all[currentGateName];
   gates.custom[res.name] = currentGate;
   gates.all[res.name] = currentGate;
+
   currentGate.name = res.name;
   currentGateName = res.name;
 
@@ -373,6 +374,13 @@ function whileDrag(e) {
   draw();
 }
 function stopDrag(e) {
+  let underMouse = document.elementsFromPoint(e.clientX, e.clientY);
+  if (!underMouse.includes(mainElem)) {
+    dragged.forEach((object, i) => {
+      delete currentGate.gates[object.object.id];
+    });
+  }
+
   dragged.forEach((object, i) => {
     object.object.isDragged = false;
   });
@@ -382,22 +390,39 @@ function stopDrag(e) {
 }
 
 let wireStart;
+let wireStops;
 function startWire(e, gate, port) {;
+  if (e.button != 0) return;
   document.addEventListener("mousemove", whileWire);
   document.addEventListener("mouseup", stopWire);
 
   wireStart = {gate, port};
+  wireStops = [];
   
   whileWire(e);
 
   e.stopPropagation();
 }
 function whileWire(e) {
-  let coords = getCoords(e);
+  let coords = toGrid(getCoords(e));
+
+  let underMouse = document.elementsFromPoint(e.clientX, e.clientY);
+  let plugs = underMouse.filter(elem=>elem.classList.contains("plug"));
+
+  if (plugs.length != 0 && plugs[0].dataset.input != wireStart.port.input.toString() && plugs[0].dataset.gate != wireStart.gate.id) {
+    let plug = plugs[0];
+    let box = plug.getBoundingClientRect();
+
+    coords = {
+      x: box.x + box.width / 2 - mainbox.x - mainborderwidth,
+      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
+    };
+  }
+
 
   previewWire = {
     start: wireStart,
-    stops: [],
+    stops: wireStops,
     end: coords,
 
     active: true,
@@ -406,11 +431,16 @@ function whileWire(e) {
   draw();
 }
 function stopWire(e) {
-  previewWire.active = false;
+  let coords = toGrid(getCoords(e));
+  if (e.button == 0) {
+    previewWire.active = false;
 
-  draw();
-  document.removeEventListener("mousemove", whileWire);
-  document.removeEventListener("mouseup", stopWire);
+    draw();
+    document.removeEventListener("mousemove", whileWire);
+    document.removeEventListener("mouseup", stopWire);
+  } else if (e.button == 1) {
+    wireStops.push(coords);
+  }
 }
 
 
@@ -545,13 +575,42 @@ function removeFromID(id) {
 function generatePath(desc) {
   let path = `M${Math.round(desc.start.x)} ${Math.round(desc.start.y)} `;
   for (let i = 0; i < desc.stops.length; i++) {
-
+    let stop = desc.stops[i];
+    path += `L${Math.round(stop.x)} ${Math.round(stop.y)}`;
   }
   path += `L${Math.round(desc.end.x)} ${Math.round(desc.end.y)}`;
 
   return path;
 }
 
+//Takes an object with a start, stops, and end point and generates a few angle elements to show the angles in it
+function showAngles(desc) {
+  anglesElem.replaceChildren();
+
+  let stops = [desc.start, ...desc.stops, desc.end];
+
+  for (let i = 1; i < stops.length - 1; i++) {
+    let last = stops[i - 1];
+    let stop = stops[i];  
+    let next = stops[i + 1];
+
+    let thisAngle = Math.atan2(next.y - stop.y, next.x - stop.x);
+    let lastAngle = Math.atan2(stop.y - last.y, stop.x - last.x);
+
+    let a = (thisAngle - lastAngle) / Math.PI * 180;
+    let positive = Math.abs(a);
+    a = 180 - Math.min(positive, 360 - positive);
+
+    let elem = document.createElement("angle");
+    elem.className = "angle";
+    elem.innerText = `${Math.round(a*10)/10}°`;
+
+    elem.style.top = stop.y + "px";
+    elem.style.left = stop.x + "px";
+    
+    anglesElem.appendChild(elem);
+  }
+}
 
 //Preventing the user from leaving with unsaved progress
 window.addEventListener("beforeunload", function (e) {
