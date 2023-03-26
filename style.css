@@ -237,6 +237,12 @@ Wires
 
   pointer-events: stroke;
 }
+.wire:hover {
+  stroke-width: calc(var(--unit) * 0.25);
+}
+.wire.preview {
+  pointer-events: none;
+}
 
 /*
 The angles info

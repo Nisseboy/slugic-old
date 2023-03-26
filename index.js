@@ -43,9 +43,14 @@ function resize() {
 
   height = sizeDivisions;
   width = sizeDivisions / 9 * 16;
+
+  draw();
 }
-resize();
 window.onresize = resize;
+
+mainbox = mainElem.getBoundingClientRect();
+unit = mainbox.height / sizeDivisions;
+document.body.style.setProperty("--unit", unit + "px");
 
 
 //Drawing the gates
@@ -179,8 +184,9 @@ function draw() {
     let wire = currentGate.wires[i];
 
     if (
-      !currentGate.gates[wire.start.gate] ||
-      !currentGate.gates[wire.end.gate]
+      wire &&
+      (!currentGate.gates[wire.start.gate] ||
+      !currentGate.gates[wire.end.gate])
     ) {
       delete currentGate.wires[i];
     }
@@ -225,11 +231,18 @@ function draw() {
       wireElem.classList.add("wire");
 
       wireElem.addEventListener("mouseenter", e=>{
-        //TODO: More visual cues to show the hover
+        //TODO: fix the angle names staying put when gate gets moved.
         showAngles({start, stops, end});
       });
       wireElem.addEventListener("mouseleave", e=>{
         anglesElem.replaceChildren();
+      });
+
+      wireElem.addEventListener("mousedown", e => {
+        if (e.button == 2) {
+          delete currentGate.wires[i];
+          draw();
+        }
       });
 
       wiresElem.appendChild(wireElem);
@@ -814,7 +827,7 @@ function generatePath(desc) {
 function showAngles(desc) {
   anglesElem.replaceChildren();
 
-  let stops = [desc.start, ...desc.stops, desc.end];
+  let stops = [{x: desc.start.x-1, y: desc.start.y}, desc.start, ...desc.stops, desc.end];
 
   for (let i = 1; i < stops.length - 1; i++) {
     let last = stops[i - 1];
