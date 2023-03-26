@@ -298,6 +298,8 @@ Popups
   font-size: 1rem;
   color: var(--fg);
   font-weight: 700;
+
+  z-index: 1000;
 }
 .popup {
   width: 24em;

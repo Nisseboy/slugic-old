@@ -26,6 +26,9 @@ let mainborderwidth;
 let width;
 let height;
 
+
+let mouseEvent;
+
 //The theme switcher
 themeSwitcherElem.onclick = e => {
   document.body.classList.toggle("light-theme");
@@ -174,10 +177,6 @@ function draw() {
   //Adding and moving placed wires
   for (let i in currentGate.wires) {
     let wire = currentGate.wires[i];
-
-    if (drawnWires[i]) {
-      continue;
-    }
     
     let start = wire.start;
     let stops = wire.stops;
@@ -202,18 +201,25 @@ function draw() {
     stops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
 
     let path = generatePath({start, stops, end});
-    let wireElem = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    wireElem.classList.add("wire");
+    
+    let wireElem = drawnWires[i];
+    if (!wireElem) {
+      wireElem = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      wireElem.classList.add("wire");
+      wiresElem.appendChild(wireElem);
+
+      drawnWires[i] = wireElem;
+    }
+
     wireElem.setAttribute("d", path);
-
-    wiresElem.appendChild(wireElem);
-
-    drawnWires[i] = wireElem;
   }
 
   //Removing deleted gates
   for (let i in drawnWires) {
     let wire = drawnWires[i];
+    if (!currentGate.wires[i]) {
+      wire.remove();
+    }
   }
 
 }
@@ -494,10 +500,11 @@ function stopWire(e) {
 
       let end = {gate: gate, port: {input: false, i: plug.dataset.i}};
       let start = wireStart;
-
-      if (!start.input) {
+      
+      if (!start.port.input) {
         start = end;
         end = wireStart;
+        wireStops = wireStops.reverse();
       }
 
       let wire = {
@@ -586,12 +593,77 @@ document.addEventListener("keydown", e => {
   }
 });
 
+
+//Copy and pasting
+let copied = [];
+function copySelection() {
+  //TODO: add a samll popup signifying that a copy has occured
+  //TODO: Copy wires as well
+  let min = {x: Infinity, y: Infinity};
+
+  copied = getSelected().filter(elem=>{
+    return elem.classList.contains("gate");
+  }).map(elem=>{
+    let gate = currentGate.gates[elem.dataset.id];
+
+    min.x = Math.min(min.x, gate.x);
+    min.y = Math.min(min.y, gate.y);
+    
+    return {
+      type: gate.type,
+      x: gate.x,
+      y: gate.y
+    };
+  });
+
+  copied.map(elem=>{
+    elem.x -= min.x;
+    elem.y -= min.y;
+  });
+}
+function pasteSelection() {
+  let coords = toGrid(getCoords(mouseEvent));
+  clearSelected();
+
+  let placed = [];
+
+  copied.forEach(elem=>{
+    let gate = {
+      type: elem.type,
+      x: elem.x + coords.x / unit,
+      y: elem.y + coords.y / unit,
+      id: generateID()
+    };
+    console.log(coords.x)
+
+    currentGate.gates[gate.id] = gate;
+
+    placed.push(gate);
+  });
+
+  draw();
+
+  placed.forEach(elem=>{
+    elem.elem.classList.add("selected");
+  });
+}
+document.addEventListener("keydown", e=>{
+  if (!e.ctrlKey) return;
+  if (e.key == "c") {
+    copySelection();
+  }
+  if (e.key == "v") {
+    pasteSelection();
+  }
+});
+
+
 //Prevents context menu
 document.oncontextmenu = e => {
   return false;
 }
 
-
+//Shows where the mouse is in relation to the grid
 mainElem.addEventListener("mousemove", e => {
   let coords = getCoords(e);
   let {x, y} = toGrid(coords);
@@ -703,3 +775,6 @@ window.addEventListener("beforeunload", function (e) {
   //TODO: save
   
 });
+
+//Constantly updates mouseEvent which makes the mouse position available to all functions
+document.addEventListener("mousemove", e=>{mouseEvent = e});
