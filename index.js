@@ -174,6 +174,24 @@ function draw() {
     anglesElem.replaceChildren();
   }
 
+  //Removing deleted gates
+  for (let i in drawnWires) {
+    let wireElem = drawnWires[i];
+    let wire = currentGate.wires[i];
+
+    if (
+      !currentGate.gates[wire.start.gate] ||
+      !currentGate.gates[wire.end.gate]
+    ) {
+      delete currentGate.wires[i];
+    }
+
+    if (!currentGate.wires[i]) {
+      wireElem.remove();
+      delete drawnWires[i];
+    }
+  }
+
   //Adding and moving placed wires
   for (let i in currentGate.wires) {
     let wire = currentGate.wires[i];
@@ -182,7 +200,7 @@ function draw() {
     let stops = wire.stops;
     let end = wire.end;
     
-    let plugHolder = currentGate.gates[start.gate].elem.children[0];
+    let plugHolder = currentGate.gates[start.gate].elem.children[1];
     let plug = plugHolder.children[start.port.i];
     let box = plug.getBoundingClientRect();
     start = {
@@ -190,7 +208,7 @@ function draw() {
       y: box.y + box.height / 2 - mainbox.y - mainborderwidth
     }
 
-    plugHolder = currentGate.gates[end.gate].elem.children[1];
+    plugHolder = currentGate.gates[end.gate].elem.children[0];
     plug = plugHolder.children[end.port.i];
     box = plug.getBoundingClientRect();
     end = {
@@ -212,14 +230,6 @@ function draw() {
     }
 
     wireElem.setAttribute("d", path);
-  }
-
-  //Removing deleted gates
-  for (let i in drawnWires) {
-    let wire = drawnWires[i];
-    if (!currentGate.wires[i]) {
-      wire.remove();
-    }
   }
 
 }
@@ -501,11 +511,15 @@ function stopWire(e) {
       let end = {gate: gate, port: {input: false, i: plug.dataset.i}};
       let start = wireStart;
       
-      if (!start.port.input) {
+      if (start.port.input) {
         start = end;
         end = wireStart;
+
         wireStops = wireStops.reverse();
       }
+
+      end.port.input = true;
+      start.port.input = false;
 
       let wire = {
         start: start,
@@ -595,15 +609,20 @@ document.addEventListener("keydown", e => {
 
 
 //Copy and pasting
-let copied = [];
+let copied;
 function copySelection() {
   //TODO: add a samll popup signifying that a copy has occured
-  //TODO: Copy wires as well
-  let min = {x: Infinity, y: Infinity};
-
-  copied = getSelected().filter(elem=>{
+  let selection = getSelected().filter(elem=>{
     return elem.classList.contains("gate");
-  }).map(elem=>{
+  });
+
+  copied = {
+    gates: [],
+    wires: []
+  };
+
+  let min = {x: Infinity, y: Infinity};
+  copied.gates = selection.map(elem=>{
     let gate = currentGate.gates[elem.dataset.id];
 
     min.x = Math.min(min.x, gate.x);
@@ -612,14 +631,41 @@ function copySelection() {
     return {
       type: gate.type,
       x: gate.x,
-      y: gate.y
+      y: gate.y,
+      id: gate.id
     };
   });
 
-  copied.map(elem=>{
+  copied.gates.map(elem=>{
     elem.x -= min.x;
     elem.y -= min.y;
   });
+
+
+  for (let i in currentGate.wires) {
+    let wire = currentGate.wires[i];
+
+    let start = copied.gates.findIndex(elem=>{return elem.id == wire.start.gate});
+    let end = copied.gates.findIndex(elem=>{return elem.id == wire.end.gate});
+    
+    if (
+      start != -1 &&
+      end != -1
+    ) {
+      let newWire = deepCopy(wire);
+
+      delete newWire.id;
+      newWire.stops.map(elem=>{
+        elem.x -= min.x;
+        elem.y -= min.y;
+      });
+
+      newWire.start.gate = start;
+      newWire.end.gate = end;
+
+      copied.wires.push(newWire);
+    }
+  }
 }
 function pasteSelection() {
   let coords = toGrid(getCoords(mouseEvent));
@@ -627,18 +673,34 @@ function pasteSelection() {
 
   let placed = [];
 
-  copied.forEach(elem=>{
+  copied.gates.forEach(elem=>{
     let gate = {
       type: elem.type,
       x: elem.x + coords.x / unit,
       y: elem.y + coords.y / unit,
       id: generateID()
     };
-    console.log(coords.x)
 
     currentGate.gates[gate.id] = gate;
 
     placed.push(gate);
+  });
+
+  copied.wires.forEach(elem=>{
+    let wire = deepCopy(elem);
+    wire.id = generateID();
+
+    wire.start.gate = placed[wire.start.gate].id;
+    wire.end.gate = placed[wire.end.gate].id;
+
+    wire.stops.forEach(elem=>{
+      elem.x += coords.x / unit;
+      elem.y += coords.y / unit;
+
+      placed.push(elem);
+    });
+    
+    currentGate.wires[wire.id] = wire;
   });
 
   draw();
@@ -656,6 +718,9 @@ document.addEventListener("keydown", e=>{
     pasteSelection();
   }
 });
+
+
+//TODO: ctrl z, ctrl y
 
 
 //Prevents context menu
@@ -768,6 +833,23 @@ function showAngles(desc) {
     
     anglesElem.appendChild(elem);
   }
+}
+
+//Deep copies an object recursively
+function deepCopy(ob) {
+  let newOb;
+  if (Array.isArray(ob))
+    newOb = [];
+  else if (typeof ob == "object")
+    newOb = {};
+  else
+    return ob;
+
+  for (let i in ob) {
+    newOb[i] = deepCopy(ob[i]);
+  }
+
+  return newOb;
 }
 
 //Preventing the user from leaving with unsaved progress
