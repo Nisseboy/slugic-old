@@ -223,6 +223,15 @@ function draw() {
     if (!wireElem) {
       wireElem = document.createElementNS("http://www.w3.org/2000/svg", "path");
       wireElem.classList.add("wire");
+
+      wireElem.addEventListener("mouseenter", e=>{
+        //TODO: More visual cues to show the hover
+        showAngles({start, stops, end});
+      });
+      wireElem.addEventListener("mouseleave", e=>{
+        anglesElem.replaceChildren();
+      });
+
       wiresElem.appendChild(wireElem);
 
       drawnWires[i] = wireElem;

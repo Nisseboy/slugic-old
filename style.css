@@ -234,6 +234,8 @@ Wires
   stroke-width: calc(var(--unit) * 0.15);
   z-index: 100;
   fill: none;
+
+  pointer-events: stroke;
 }
 
 /*
