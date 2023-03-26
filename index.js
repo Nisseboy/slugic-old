@@ -26,7 +26,6 @@ let mainborderwidth;
 let width;
 let height;
 
-
 let mouseEvent;
 
 //The theme switcher
@@ -718,10 +717,6 @@ document.addEventListener("keydown", e=>{
     pasteSelection();
   }
 });
-
-
-//TODO: ctrl z, ctrl y
-
 
 //Prevents context menu
 document.oncontextmenu = e => {
