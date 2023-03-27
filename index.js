@@ -57,6 +57,7 @@ document.body.style.setProperty("--unit", unit + "px");
 let drawnGates = {};
 let drawnGatesInFooter = {};
 let drawnWires = {};
+let drawnWirePoints = {};
 
 function draw() {
   mainbox = mainElem.getBoundingClientRect();
@@ -152,7 +153,7 @@ function draw() {
     drawnGatesInFooter[i] = gateElem;
   }
 
-  //Removing deleted gates
+  //Removing deleted wires
   for (let i in drawnWires) {
     let wireElem = drawnWires[i];
     let wire = currentGate.wires[i];
@@ -196,10 +197,16 @@ function draw() {
 
       wireElem.addEventListener("mouseenter", e=>{
         wire.hovering = true;
+        for (let i in wire.stops) {
+          wire.stops[i].elem.classList.add("hovering");
+        }
         draw();
       });
       wireElem.addEventListener("mouseleave", e=>{
         wire.hovering = false;
+        for (let i in wire.stops) {
+          wire.stops[i].elem.classList.remove("hovering");
+        }
         draw();
       });
 
@@ -207,11 +214,12 @@ function draw() {
         let desc = getWireCoords({start, stops, end});
         if (e.button == 0) {
           //TODO: Make the nearest stop move
-          let nearestStop = getNearestStop(desc, getCoords(e));
+          let nearestStop = getNearestStop(desc, wireElem, getCoords(e));
+          startDrag(e, wire.stops[nearestStop-1]);
         }
         if (e.button == 1) {
           //TODO: Create a new stop inbetween stops
-          let nearestStop = getNearestStop(desc, getCoords(e));
+          let nearestStop = getNearestStop(desc, wireElem, getCoords(e));
         }
         if (e.button == 2) {
           delete currentGate.wires[i];
@@ -251,6 +259,57 @@ function draw() {
   } else {
     previewWireElem.style.display = "none";
   }
+
+  //Creating/Moving wirepoints
+  for (let i in currentGate.wires) {
+    let wire = currentGate.wires[i];
+    for (let j in wire.stops) {
+      let stop = wire.stops[j];
+
+      let elem = drawnWirePoints[`${i}§${j}`];
+
+      if (elem) {
+        elem.style.top = stop.y * unit + "px";
+        elem.style.left = stop.x * unit + "px";
+        continue;
+      }
+
+      elem = document.createElement("div");
+
+      elem.className = "wire-point";
+      elem.style.top = stop.y * unit + "px";
+      elem.style.left = stop.x * unit + "px";
+      elem.dataset.id = `${i}§${j}`;
+      mainElem.appendChild(elem);
+
+      drawnWirePoints[`${i}§${j}`] = elem;
+
+      stop.elem = elem;
+    }
+  }
+
+  //Removing removed wirepoints
+  for (let i in drawnWirePoints) {
+    let elem = drawnWirePoints[i];
+
+    let exists = false;
+
+    for (let j in currentGate.wires) {
+      let wire = currentGate.wires[j];
+      for (let k in wire.stops) {
+        if (`${j}§${k}` == i) {
+          exists = true;
+        }
+      }
+    }
+
+    if (!exists) {
+      console.log(123);
+      elem.remove();
+      delete drawnWirePoints[i];
+    }
+  }
+
   //Hides the angles screen if nothing is using it
   if (!showingAngles) {
     anglesElem.replaceChildren();
@@ -263,10 +322,21 @@ function redraw() {
     drawnGates[i].remove();
   }
   drawnGates = {};
+
   for (let i in drawnGatesInFooter) {
     drawnGatesInFooter[i].remove();
   }
   drawnGatesInFooter = {};
+
+  for (let i in drawnWires) {
+    drawnWires[i].remove();
+  }
+  drawnWires = {};
+
+  for (let i in drawnWirePoints) {
+    drawnWirePoints[i].remove();
+  }
+  drawnWirePoints = {};
 
   changeGate(currentGateName);
   draw();
@@ -434,8 +504,15 @@ function startDrag(e, object) {
 
   dragged = [];
   getSelected().forEach((elem, i) => {
-    //TODO: make this compatible with all object tpyes
-    let ob = currentGate.gates[elem.dataset.id];
+    let id = elem.dataset.id;
+    let ob;
+    if (elem.classList.contains("gate")) {
+      ob = currentGate.gates[id];
+    } else if (elem.classList.contains("wire-point")) {
+      ob = currentGate.wires[id.split("§")[0]].stops[id.split("§")[1]];
+    }
+
+
     dragged.push({
       offset: {
         x: ob.x - coords.x / unit,
@@ -832,10 +909,50 @@ function generatePath(desc, rounding=10) {
 }
 
 //Takes a wire description as well as a position and returns the nearest stop
-function getNearestStop(desc, pos) {
+function getNearestStop(desc, elem, pos) {
   let stops = [desc.start, ...desc.stops, desc.end];
+  let length = elem.getTotalLength();
+  
+  let bestD = Infinity;
+  let bestPoint;
 
-  console.log(stops);
+  for (let i = 0; i < length; i++) {
+    let point = elem.getPointAtLength(i);
+
+    let distSq = (point.x - pos.x) * (point.x - pos.x) + (point.y - pos.y) * (point.y - pos.y);
+
+    if (distSq < bestD) {
+      bestD = distSq;
+      bestPoint = i;
+    }
+  }
+  
+  let lengths = [];
+  let totalLength = 0;
+
+  for (let i = 0; i < stops.length; i++) {
+    let stop = stops[i];
+    
+    lengths[i] = totalLength;
+
+    if (i != stops.length - 1) {
+      let next = stops[i + 1];
+      totalLength += Math.sqrt((next.x - stop.x) * (next.x - stop.x) + (next.y - stop.y) * (next.y - stop.y));
+    }
+  }
+
+  bestD = Infinity;
+  let bestStop;
+
+  for (let i = 0; i < lengths.length; i++) {
+    let dist = Math.abs(lengths[i] - bestPoint);
+    if (dist < bestD) {
+      bestD = dist;
+      bestStop = i;
+    }
+  }
+
+  return bestStop;
 }
 
 //Takes a description with the start or/and end replaced with a port object and returns a coordinate based
@@ -888,15 +1005,6 @@ function showAngles(desc) {
     elem.style.top = stop.y + "px";
     elem.style.left = stop.x + "px";
     elem.style.translate = "-50% -130%";
-    anglesElem.appendChild(elem);
-
-    elem = document.createElement("div");
-    elem.className = "angle";
-    elem.innerText = `X`;
-
-    elem.style.top = stop.y + "px";
-    elem.style.left = stop.x + "px";
-    elem.style.background = "none";
     anglesElem.appendChild(elem);
   }
 }

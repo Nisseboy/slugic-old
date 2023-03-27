@@ -245,6 +245,20 @@ Wires
 .wire.preview {
   pointer-events: none;
 }
+.wire-point {
+  position: absolute;
+
+  width: calc(var(--unit) * 0.5);
+  aspect-ratio: 1 / 1;
+
+  translate: -50% -50%;
+
+  border-radius: 50%;
+
+  z-index: 1000;
+
+  pointer-events: none;
+}
 
 /*
 The angles info
@@ -271,7 +285,8 @@ The angles info
 Styles for selected elements and selection box
 */
 .selected,
-.gate:hover {
+.gate:hover,
+.wire-point.hovering {
   outline: 2px solid var(--selected);
   outline-offset: 4px;
 }
@@ -433,8 +448,6 @@ Theme switcher
 
   font-size: 20px;
 }
-
-
 
 
 .marker {
