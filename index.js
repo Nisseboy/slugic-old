@@ -178,29 +178,14 @@ function draw() {
     let start = wire.start;
     let stops = wire.stops;
     let end = wire.end;
-    
-    let plugHolder = currentGate.gates[start.gate].elem.children[1];
-    let plug = plugHolder.children[start.port.i];
-    let box = plug.getBoundingClientRect();
-    start = {
-      x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
-      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
-    }
-
-    plugHolder = currentGate.gates[end.gate].elem.children[0];
-    plug = plugHolder.children[end.port.i];
-    box = plug.getBoundingClientRect();
-    end = {
-      x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
-      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
-    }
 
     stops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
 
-    let path = generatePath({start, stops, end}, (wire.hovering?0:10));
+    let desc = getWireCoords({start, stops, end});
+    let path = generatePath(desc, (wire.hovering?0:10));
 
     if (wire.hovering) {
-      showAngles({start, stops, end});
+      showAngles(desc);
       showingAngles = true;
     }
     
@@ -219,6 +204,15 @@ function draw() {
       });
 
       wireElem.addEventListener("mousedown", e => {
+        let desc = getWireCoords({start, stops, end});
+        if (e.button == 0) {
+          //TODO: Make the nearest stop move
+          let nearestStop = getNearestStop(desc, getCoords(e));
+        }
+        if (e.button == 1) {
+          //TODO: Create a new stop inbetween stops
+          let nearestStop = getNearestStop(desc, getCoords(e));
+        }
         if (e.button == 2) {
           delete currentGate.wires[i];
           draw();
@@ -837,10 +831,41 @@ function generatePath(desc, rounding=10) {
   return path;
 }
 
+//Takes a wire description as well as a position and returns the nearest stop
+function getNearestStop(desc, pos) {
+  let stops = [desc.start, ...desc.stops, desc.end];
+
+  console.log(stops);
+}
+
+//Takes a description with the start or/and end replaced with a port object and returns a coordinate based
+function getWireCoords(desc) {
+  let start = desc.start;
+  let stops = desc.stops;
+  let end = desc.end;
+
+  let plugHolder = currentGate.gates[start.gate].elem.children[1];
+  let plug = plugHolder.children[start.port.i];
+  let box = plug.getBoundingClientRect();
+  start = {
+    x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
+    y: box.y + box.height / 2 - mainbox.y - mainborderwidth
+  }
+
+  plugHolder = currentGate.gates[end.gate].elem.children[0];
+  plug = plugHolder.children[end.port.i];
+  box = plug.getBoundingClientRect();
+  end = {
+    x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
+    y: box.y + box.height / 2 - mainbox.y - mainborderwidth
+  }
+
+  return {start, stops, end};
+}
+
 //Takes an object with a start, stops, and end point and generates a few angle elements to show the angles in it
 function showAngles(desc) {
   anglesElem.replaceChildren();
-  console.log("hi", desc);
 
   let stops = [{x: desc.start.x-1, y: desc.start.y}, desc.start, ...desc.stops, desc.end];
 
