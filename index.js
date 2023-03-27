@@ -152,32 +152,6 @@ function draw() {
     drawnGatesInFooter[i] = gateElem;
   }
 
-
-  //Moving preview wire
-  if (previewWire.active) {
-    let start = previewWire.start;
-    let stops = previewWire.stops;
-    let end = previewWire.end;
-
-    let plugHolder = currentGate.gates[start.gate].elem.children[(start.port.input)?0:1];
-    let plug = plugHolder.children[start.port.i];
-    let box = plug.getBoundingClientRect();
-    
-    start = {
-      x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
-      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
-    };
-
-    let path = generatePath({start, stops, end});
-    previewWireElem.setAttribute("d", path);
-    previewWireElem.style.display = "block";
-
-    showAngles({start, stops, end});
-  } else {
-    previewWireElem.style.display = "none";
-    anglesElem.replaceChildren();
-  }
-
   //Removing deleted gates
   for (let i in drawnWires) {
     let wireElem = drawnWires[i];
@@ -196,7 +170,7 @@ function draw() {
       delete drawnWires[i];
     }
   }
-
+  let showingAngles = false;
   //Adding and moving placed wires
   for (let i in currentGate.wires) {
     let wire = currentGate.wires[i];
@@ -223,7 +197,12 @@ function draw() {
 
     stops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
 
-    let path = generatePath({start, stops, end});
+    let path = generatePath({start, stops, end}, (wire.hovering?0:10));
+
+    if (wire.hovering) {
+      showAngles({start, stops, end});
+      showingAngles = true;
+    }
     
     let wireElem = drawnWires[i];
     if (!wireElem) {
@@ -231,11 +210,12 @@ function draw() {
       wireElem.classList.add("wire");
 
       wireElem.addEventListener("mouseenter", e=>{
-        //TODO: fix the angle names staying put when gate gets moved.
-        showAngles({start, stops, end});
+        wire.hovering = true;
+        draw();
       });
       wireElem.addEventListener("mouseleave", e=>{
-        anglesElem.replaceChildren();
+        wire.hovering = false;
+        draw();
       });
 
       wireElem.addEventListener("mousedown", e => {
@@ -253,6 +233,34 @@ function draw() {
     wireElem.setAttribute("d", path);
   }
 
+  //Moving preview wire
+  if (previewWire.active) {
+    let start = previewWire.start;
+    let stops = previewWire.stops;
+    let end = previewWire.end;
+
+    let plugHolder = currentGate.gates[start.gate].elem.children[(start.port.input)?0:1];
+    let plug = plugHolder.children[start.port.i];
+    let box = plug.getBoundingClientRect();
+    
+    start = {
+      x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
+      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
+    };
+
+    let path = generatePath({start, stops, end}, 0);
+    previewWireElem.setAttribute("d", path);
+    previewWireElem.style.display = "block";
+
+    showingAngles = true;
+    showAngles({start, stops, end});
+  } else {
+    previewWireElem.style.display = "none";
+  }
+  //Hides the angles screen if nothing is using it
+  if (!showingAngles) {
+    anglesElem.replaceChildren();
+  }
 }
 
 //Call to invalidate all drawn shit
@@ -563,6 +571,11 @@ function stopWire(e) {
 
 //Selection field
 mainElem.addEventListener("mousedown", startSelect);
+document.addEventListener("keydown", e=>{
+  if (e.ctrlKey && e.key == "a") {
+    getElements().forEach(elem=>{elem.classList.add("selected")});
+  }
+});
 let reselect = [];
 let selectStart = {};
 function startSelect(e) {
@@ -605,11 +618,14 @@ function whileSelect(e) {
       x1 < box.x + box.width - mainbox.x &&
       x2 > box.x - mainbox.x &&
       y1 < box.y + box.height - mainbox.y &&
-      y2 > box.y - mainbox.y &&
-      !elem.classList.contains("in-footer")
+      y2 > box.y - mainbox.y
     ) {
       elem.classList.add("selected");
     }
+  });
+
+  reselect.forEach(elem=>{
+    elem.classList.add("selected");
   });
 }
 function stopSelect(e) {
@@ -784,7 +800,7 @@ function clearSelected() {
 
 //Returns array of all elements
 function getElements() {
-  return Array.from(document.getElementsByClassName("gate"));
+  return Array.from(mainElem.getElementsByClassName("gate"));
 }
 
 //Returns object from id
@@ -801,9 +817,7 @@ function removeFromID(id) {
 }
 
 //Takes an object with a start, stops, and end point and generates a smooth svg path
-function generatePath(desc) {
-  const rounding = 10;
-
+function generatePath(desc, rounding=10) {
   let path = `M ${Math.round(desc.start.x)} ${Math.round(desc.start.y)} `; //Move to start of wire
   let stops = [desc.start, ...desc.stops, desc.end]
 
@@ -826,6 +840,7 @@ function generatePath(desc) {
 //Takes an object with a start, stops, and end point and generates a few angle elements to show the angles in it
 function showAngles(desc) {
   anglesElem.replaceChildren();
+  console.log("hi", desc);
 
   let stops = [{x: desc.start.x-1, y: desc.start.y}, desc.start, ...desc.stops, desc.end];
 
@@ -841,13 +856,22 @@ function showAngles(desc) {
     let positive = Math.abs(a);
     a = 180 - Math.min(positive, 360 - positive);
 
-    let elem = document.createElement("angle");
+    let elem = document.createElement("div");
     elem.className = "angle";
     elem.innerText = `${Math.round(a*10)/10}°`;
 
     elem.style.top = stop.y + "px";
     elem.style.left = stop.x + "px";
-    
+    elem.style.translate = "-50% -130%";
+    anglesElem.appendChild(elem);
+
+    elem = document.createElement("div");
+    elem.className = "angle";
+    elem.innerText = `X`;
+
+    elem.style.top = stop.y + "px";
+    elem.style.left = stop.x + "px";
+    elem.style.background = "none";
     anglesElem.appendChild(elem);
   }
 }

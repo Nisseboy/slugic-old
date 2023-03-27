@@ -25,6 +25,8 @@ body {
 
   --opposite: #ddd;
 
+  --gate-border-width: 3px;
+
   position: relative;
   margin: auto;
 
@@ -130,9 +132,9 @@ The main area and the footer as well as the header
   background-color: var(--color);
   margin-left: calc(var(--unit) * 0.1);
 
-  border: 3px solid rgb(255 255 255 / 0.2);
-  border-right: 3px solid rgb(0 0 0 / 0.2);
-  border-bottom: 3px solid rgb(0 0 0 / 0.2);
+  border: var(--gate-border-width) solid rgb(255 255 255 / 0.2);
+  border-right: var(--gate-border-width) solid rgb(0 0 0 / 0.2);
+  border-bottom: var(--gate-border-width) solid rgb(0 0 0 / 0.2);
 
   border-radius: 0 calc(var(--unit) * 0.2) calc(var(--unit) * 0.2) 0;
 
@@ -175,9 +177,9 @@ Gates
 
   box-sizing: border-box;
 
-  border: 3px solid rgb(255 255 255 / 0.2);
-  border-right: 3px solid rgb(0 0 0 / 0.2);
-  border-bottom: 3px solid rgb(0 0 0 / 0.2);
+  border: var(--gate-border-width) solid rgb(255 255 255 / 0.2);
+  border-right: var(--gate-border-width) solid rgb(0 0 0 / 0.2);
+  border-bottom: var(--gate-border-width) solid rgb(0 0 0 / 0.2);
 }
 
 .gate.in-footer {
@@ -199,15 +201,15 @@ Plugs
   height: max(calc(var(--unit) * var(--num-outputs) * 0.75), calc(var(--unit) * var(--num-inputs) * 0.75));
 }
 .plug-holder.left {
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% - var(--gate-border-width)));
 }
 .plug-holder.right {
-  transform: translateX(50%);
+  transform: translateX(calc(50% + var(--gate-border-width)));
 }
 
 .plug {
-  width: calc(var(--unit) * 0.5);
-  height: calc(var(--unit) * 0.5);
+  width: 100%;
+  aspect-ratio: 1 / 1;
 
   position: absolute;
 
@@ -261,7 +263,8 @@ The angles info
   background: rgb(0 0 0 / 0.2);
 
   color: var(--fg);
-  translate: -50% -130%;
+  
+  translate: -50% -50%;
 }
 
 /*
@@ -440,7 +443,7 @@ Theme switcher
   transform: translate(-50%, -50%);
 
   
-  background: radial-gradient(black 1px, transparent 1px);
+  background: radial-gradient(green 2px, transparent 2px);
   background-size: calc(var(--unit) / 4) calc(var(--unit) / 4);
   background-position: calc(var(--unit) / -2 - 3px) calc(var(--unit) / -2 - 3px);
   
@@ -448,7 +451,7 @@ Theme switcher
 
   pointer-events: none;
 
-  z-index: 0;
+  z-index: 1000;
 
   display: none;
 }
