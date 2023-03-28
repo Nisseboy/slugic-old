@@ -180,12 +180,17 @@ function draw() {
     let stops = wire.stops;
     let end = wire.end;
 
-    stops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
-
-    let desc = getWireCoords({start, stops, end});
+    let nStops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
+    let desc = getWireCoords({start, stops: nStops, end});
     let path = generatePath(desc, (wire.hovering?0:10));
 
-    if (wire.hovering) {
+    let dragging = false;
+
+    stops.forEach(elem => {
+      if (elem.isDragged) dragging = true;
+    });
+
+    if (wire.hovering || dragging) {
       showAngles(desc);
       showingAngles = true;
     }
@@ -211,11 +216,16 @@ function draw() {
       });
 
       wireElem.addEventListener("mousedown", e => {
-        let desc = getWireCoords({start, stops, end});
+        let nStops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
+        let desc = getWireCoords({start, stops: nStops, end});
         if (e.button == 0) {
-          //TODO: Make the nearest stop move
           let nearestStop = getNearestStop(desc, wireElem, getCoords(e));
+
+          if (nearestStop == 0 || nearestStop == wire.stops.length + 1) return;
+
           startDrag(e, wire.stops[nearestStop-1]);
+
+          //TODO: handle dragging of start and end point
         }
         if (e.button == 1) {
           //TODO: Create a new stop inbetween stops
@@ -871,7 +881,10 @@ function clearSelected() {
 
 //Returns array of all elements
 function getElements() {
-  return Array.from(mainElem.getElementsByClassName("gate"));
+  return [
+    ...Array.from(mainElem.getElementsByClassName("gate")),
+    ...Array.from(mainElem.getElementsByClassName("wire-point")),
+  ];
 }
 
 //Returns object from id
