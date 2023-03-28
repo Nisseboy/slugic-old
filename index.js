@@ -193,6 +193,14 @@ function draw() {
     if (wire.hovering || dragging) {
       showAngles(desc);
       showingAngles = true;
+      
+      for (let i in wire.stops) {
+        wire.stops[i].elem?.classList.add("hovering");
+      }
+    } else {
+      for (let i in wire.stops) {
+        wire.stops[i].elem?.classList.remove("hovering");
+      }
     }
     
     let wireElem = drawnWires[i];
@@ -202,24 +210,19 @@ function draw() {
 
       wireElem.addEventListener("mouseenter", e=>{
         wire.hovering = true;
-        for (let i in wire.stops) {
-          wire.stops[i].elem.classList.add("hovering");
-        }
         draw();
       });
       wireElem.addEventListener("mouseleave", e=>{
         wire.hovering = false;
-        for (let i in wire.stops) {
-          wire.stops[i].elem.classList.remove("hovering");
-        }
         draw();
       });
-
       wireElem.addEventListener("mousedown", e => {
         let nStops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
         let desc = getWireCoords({start, stops: nStops, end});
+
+        let coords = getCoords(e);
         if (e.button == 0) {
-          let nearestStop = getNearestStop(desc, wireElem, getCoords(e));
+          let nearestStop = getNearestStop(desc, wireElem, coords);
 
           if (nearestStop == 0 || nearestStop == wire.stops.length + 1) return;
 
@@ -228,8 +231,22 @@ function draw() {
           //TODO: handle dragging of start and end point
         }
         if (e.button == 1) {
-          //TODO: Create a new stop inbetween stops
-          let nearestStop = getNearestStop(desc, wireElem, getCoords(e));
+          let nearestStop = getNearestStop(desc, wireElem, coords, true);
+          let mouseDist = getNearestPointOnPath(wireElem, coords);
+          let point = wireElem.getPointAtLength(mouseDist);
+
+          let stop = {
+            x: point.x / unit, 
+            y: point.y / unit, 
+            id: generateID()
+          };
+
+          wire.stops.splice(nearestStop - 1, 0, stop);
+
+          draw();
+          draw();
+          
+          startDrag(e, stop);
         }
         if (e.button == 2) {
           delete currentGate.wires[i];
@@ -276,7 +293,9 @@ function draw() {
     for (let j in wire.stops) {
       let stop = wire.stops[j];
 
-      let elem = drawnWirePoints[`${i}§${j}`];
+      if (!stop.id) stop.id = generateID();
+
+      let elem = drawnWirePoints[stop.id];
 
       if (elem) {
         elem.style.top = stop.y * unit + "px";
@@ -289,11 +308,11 @@ function draw() {
       elem.className = "wire-point";
       elem.style.top = stop.y * unit + "px";
       elem.style.left = stop.x * unit + "px";
-      elem.dataset.id = `${i}§${j}`;
+      elem.dataset.wire = wire.id;
+      elem.dataset.id = stop.id;
       mainElem.appendChild(elem);
 
-      drawnWirePoints[`${i}§${j}`] = elem;
-
+      drawnWirePoints[stop.id] = elem;
       stop.elem = elem;
     }
   }
@@ -307,14 +326,13 @@ function draw() {
     for (let j in currentGate.wires) {
       let wire = currentGate.wires[j];
       for (let k in wire.stops) {
-        if (`${j}§${k}` == i) {
+        if (i == wire.stops[k].id) {
           exists = true;
         }
       }
     }
 
     if (!exists) {
-      console.log(123);
       elem.remove();
       delete drawnWirePoints[i];
     }
@@ -519,7 +537,7 @@ function startDrag(e, object) {
     if (elem.classList.contains("gate")) {
       ob = currentGate.gates[id];
     } else if (elem.classList.contains("wire-point")) {
-      ob = currentGate.wires[id.split("§")[0]].stops[id.split("§")[1]];
+      ob = currentGate.wires[elem.dataset.wire].stops.find(item=>{return item.id == id});
     }
 
 
@@ -922,23 +940,10 @@ function generatePath(desc, rounding=10) {
 }
 
 //Takes a wire description as well as a position and returns the nearest stop
-function getNearestStop(desc, elem, pos) {
+function getNearestStop(desc, elem, pos, onlyAfter = false) {
   let stops = [desc.start, ...desc.stops, desc.end];
-  let length = elem.getTotalLength();
   
-  let bestD = Infinity;
-  let bestPoint;
-
-  for (let i = 0; i < length; i++) {
-    let point = elem.getPointAtLength(i);
-
-    let distSq = (point.x - pos.x) * (point.x - pos.x) + (point.y - pos.y) * (point.y - pos.y);
-
-    if (distSq < bestD) {
-      bestD = distSq;
-      bestPoint = i;
-    }
-  }
+  let mouseDist = getNearestPointOnPath(elem, pos);
   
   let lengths = [];
   let totalLength = 0;
@@ -958,14 +963,35 @@ function getNearestStop(desc, elem, pos) {
   let bestStop;
 
   for (let i = 0; i < lengths.length; i++) {
-    let dist = Math.abs(lengths[i] - bestPoint);
-    if (dist < bestD) {
+    let dist = Math.abs(lengths[i] - mouseDist);
+    if (dist < bestD && (lengths[i] > mouseDist || !onlyAfter)) {
       bestD = dist;
       bestStop = i;
     }
   }
 
   return bestStop;
+}
+
+//Takes a wire element as well as a position and returns the nearest length
+function getNearestPointOnPath(elem, pos) {
+  let length = elem.getTotalLength();
+
+  let bestD = Infinity;
+  let bestPoint;
+
+  for (let i = 0; i < length; i++) {
+    let point = elem.getPointAtLength(i);
+
+    let distSq = (point.x - pos.x) * (point.x - pos.x) + (point.y - pos.y) * (point.y - pos.y);
+
+    if (distSq < bestD) {
+      bestD = distSq;
+      bestPoint = i;
+    }
+  }
+
+  return bestPoint;
 }
 
 //Takes a description with the start or/and end replaced with a port object and returns a coordinate based
