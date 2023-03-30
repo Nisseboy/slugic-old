@@ -158,8 +158,7 @@ function draw() {
     let stops = wire.stops;
     let end = wire.end;
 
-    let nStops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
-    let desc = getWireCoords({start, stops: nStops, end});
+    let desc = getWireCoords({start, stops, end});
     let path = generatePath(desc, (wire.hovering?0:10));
 
     let dragging = false;
@@ -186,8 +185,8 @@ function draw() {
       wireElem = createWireElem(wire);
       mainElem.appendChild(wireElem);
       drawnWires[i] = wireElem;
-      wire.elem = wireElem;
     }
+    wire.elem = wireElem;
 
     wireElem.children[0].children[0].setAttribute("d", path);
   }
@@ -233,6 +232,32 @@ function draw() {
     generateAngles(previewWire);
   } else {
     previewWireElem.style.display = "none";
+  }
+
+  //Creating unplaced wire points
+  for (let i in currentGate.wires) {
+    let wire = currentGate.wires[i];
+    for (let j in wire.stops) {
+      let stop = wire.stops[j];
+
+      let placedStop = drawnWirePoints[stop.id];
+      if (placedStop) {
+        placedStop.style.top = stop.y * unit + "px";
+        placedStop.style.left = stop.x * unit + "px";
+        continue;
+      }
+  
+      let elem = document.createElement("div");
+      elem.className = "wire-point";
+      elem.style.top = stop.y * unit + "px";
+      elem.style.left = stop.x * unit + "px";
+      elem.dataset.wire = wire.id;
+      elem.dataset.id = stop.id;
+      wire.elem.children[2].appendChild(elem);
+  
+      drawnWirePoints[stop.id] = elem;
+      stop.elem = elem;
+    }
   }
 
   //Removing removed wirepoints
@@ -327,11 +352,11 @@ function createWireElem(wire) {
   let wireElem = document.createElement("div");
   wireElem.className = "wire";
 
-  let svgElem = document.createElement("svg");
+  let svgElem = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svgElem.classList.add("wire-svg");
   let svg = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  svgElem.appendChild(svg);
   wireElem.appendChild(svgElem);
+  svgElem.appendChild(svg);
 
   let anglesElem = document.createElement("div");
   anglesElem.classList.add("angles");
@@ -353,12 +378,11 @@ function createWireElem(wire) {
   stops = wire.stops;
 
   svg.addEventListener("mousedown", e => {
-    let nStops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
-    let desc = getWireCoords({start, stops: nStops, end});
+    let desc = getWireCoords(wire);
 
     let coords = getCoords(e);
     if (e.button == 0) {
-      let nearestStop = getNearestStop(desc, svgElem, coords);
+      let nearestStop = getNearestStop(desc, svg, coords);
 
       if (nearestStop == 0 || nearestStop == wire.stops.length + 1) return;
 
@@ -367,9 +391,9 @@ function createWireElem(wire) {
       //TODO: handle dragging of start and end point
     }
     if (e.button == 1) {
-      let nearestStop = getNearestStop(desc, svgElem, coords, true);
-      let mouseDist = getNearestPointOnPath(svgElem, coords);
-      let point = svgElem.getPointAtLength(mouseDist);
+      let nearestStop = getNearestStop(desc, svg, coords, true);
+      let mouseDist = getNearestPointOnPath(svg, coords);
+      let point = svg.getPointAtLength(mouseDist);
 
       let stop = {
         x: point.x / unit, 
@@ -385,8 +409,26 @@ function createWireElem(wire) {
       startDrag(e, stop);
     }
     if (e.button == 2) {
-      delete currentGate.wires[i];
-      draw();
+      let nearestStop = getNearestStop(desc, svg, coords);
+      let mouseDist = getNearestPointOnPath(svg, coords);
+      let point = svg.getPointAtLength(mouseDist);
+
+      if (nearestStop != 0 && nearestStop != wire.stops.length + 1) {
+        let stop = wire.stops[nearestStop - 1];
+        stop = {
+          x: stop.x * unit,
+          y: stop.y * unit,
+          id: stop.id
+        };
+
+        let dist = Math.sqrt((stop.x - point.x)*(stop.x - point.x)+(stop.y - point.y)*(stop.y - point.y));
+        
+        if (dist < 20) {
+          removeFromID(stop.id);
+          return;
+        }
+      }
+      removeFromID(wire.id);
     }
   });
 
@@ -923,6 +965,20 @@ function removeFromID(id) {
     delete currentGate.gates[id];
     draw();
   }
+  if (currentGate.wires[id]) {
+    delete currentGate.wires[id];
+    draw();
+  }
+  for (let i in currentGate.wires) {
+    let wire = currentGate.wires[i];
+    for (let j in wire.stops) {
+      let stop = wire.stops[j];
+      if (stop.id == id) {
+        wire.stops.splice(j, 1);
+        draw();
+      }
+    }
+  }
 }
 
 //Takes an object with a start, stops, and end point and generates a smooth svg path
@@ -1006,6 +1062,10 @@ function getWireCoords(desc) {
   let start = desc.start;
   let stops = desc.stops;
   let end = desc.end;
+
+  if (!end.x && !start.x) {
+    stops = stops.map(elem=>{return {x: elem.x * unit, y: elem.y * unit}});
+  }
 
   if (!start.x) {
     let plugHolder = currentGate.gates[start.gate].elem.children[1];
