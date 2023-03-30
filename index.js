@@ -11,10 +11,7 @@ let previewWire = {active: false};
 const headerElem = document.getElementsByClassName("header")[0];
 const mainElem = document.getElementsByClassName("main")[0];
 const footerElem = document.getElementsByClassName("footer")[0];
-const wiresElem = document.getElementsByClassName("wires")[0];
 const previewWireElem = document.getElementsByClassName("wire preview")[0];
-
-const anglesElem = document.getElementsByClassName("angles")[0];
 
 const selectionElem = document.getElementsByClassName("selection")[0];
 
@@ -153,25 +150,6 @@ function draw() {
     drawnGatesInFooter[i] = gateElem;
   }
 
-  //Removing deleted wires
-  for (let i in drawnWires) {
-    let wireElem = drawnWires[i];
-    let wire = currentGate.wires[i];
-
-    if (
-      wire &&
-      (!currentGate.gates[wire.start.gate] ||
-      !currentGate.gates[wire.end.gate])
-    ) {
-      delete currentGate.wires[i];
-    }
-
-    if (!currentGate.wires[i]) {
-      wireElem.remove();
-      delete drawnWires[i];
-    }
-  }
-  let showingAngles = false;
   //Adding and moving placed wires
   for (let i in currentGate.wires) {
     let wire = currentGate.wires[i];
@@ -191,8 +169,7 @@ function draw() {
     });
 
     if (wire.hovering || dragging) {
-      showAngles(desc);
-      showingAngles = true;
+      generateAngles(wire);
       
       for (let i in wire.stops) {
         wire.stops[i].elem?.classList.add("hovering");
@@ -201,65 +178,37 @@ function draw() {
       for (let i in wire.stops) {
         wire.stops[i].elem?.classList.remove("hovering");
       }
+      wire.elem?.children[1].replaceChildren();
     }
-    
+
     let wireElem = drawnWires[i];
     if (!wireElem) {
-      wireElem = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      wireElem.classList.add("wire");
-
-      wireElem.addEventListener("mouseenter", e=>{
-        wire.hovering = true;
-        draw();
-      });
-      wireElem.addEventListener("mouseleave", e=>{
-        wire.hovering = false;
-        draw();
-      });
-      wireElem.addEventListener("mousedown", e => {
-        let nStops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
-        let desc = getWireCoords({start, stops: nStops, end});
-
-        let coords = getCoords(e);
-        if (e.button == 0) {
-          let nearestStop = getNearestStop(desc, wireElem, coords);
-
-          if (nearestStop == 0 || nearestStop == wire.stops.length + 1) return;
-
-          startDrag(e, wire.stops[nearestStop-1]);
-
-          //TODO: handle dragging of start and end point
-        }
-        if (e.button == 1) {
-          let nearestStop = getNearestStop(desc, wireElem, coords, true);
-          let mouseDist = getNearestPointOnPath(wireElem, coords);
-          let point = wireElem.getPointAtLength(mouseDist);
-
-          let stop = {
-            x: point.x / unit, 
-            y: point.y / unit, 
-            id: generateID()
-          };
-
-          wire.stops.splice(nearestStop - 1, 0, stop);
-
-          draw();
-          draw();
-          
-          startDrag(e, stop);
-        }
-        if (e.button == 2) {
-          delete currentGate.wires[i];
-          draw();
-        }
-      });
-
-      wiresElem.appendChild(wireElem);
-
+      wireElem = createWireElem(wire);
+      mainElem.appendChild(wireElem);
       drawnWires[i] = wireElem;
+      wire.elem = wireElem;
     }
 
-    wireElem.setAttribute("d", path);
+    wireElem.children[0].children[0].setAttribute("d", path);
+  }
+  
+  //Removing deleted wires
+  for (let i in drawnWires) {
+    let wireElem = drawnWires[i];
+    let wire = currentGate.wires[i];
+
+    if (
+      wire &&
+      (!currentGate.gates[wire.start.gate] ||
+      !currentGate.gates[wire.end.gate])
+    ) {
+      delete currentGate.wires[i];
+    }
+
+    if (!currentGate.wires[i]) {
+      wireElem.remove();
+      delete drawnWires[i];
+    }
   }
 
   //Moving preview wire
@@ -278,43 +227,12 @@ function draw() {
     };
 
     let path = generatePath({start, stops, end}, 0);
-    previewWireElem.setAttribute("d", path);
+    previewWireElem.children[0].children[0].setAttribute("d", path);
     previewWireElem.style.display = "block";
 
-    showingAngles = true;
-    showAngles({start, stops, end});
+    generateAngles(previewWire);
   } else {
     previewWireElem.style.display = "none";
-  }
-
-  //Creating/Moving wirepoints
-  for (let i in currentGate.wires) {
-    let wire = currentGate.wires[i];
-    for (let j in wire.stops) {
-      let stop = wire.stops[j];
-
-      if (!stop.id) stop.id = generateID();
-
-      let elem = drawnWirePoints[stop.id];
-
-      if (elem) {
-        elem.style.top = stop.y * unit + "px";
-        elem.style.left = stop.x * unit + "px";
-        continue;
-      }
-
-      elem = document.createElement("div");
-
-      elem.className = "wire-point";
-      elem.style.top = stop.y * unit + "px";
-      elem.style.left = stop.x * unit + "px";
-      elem.dataset.wire = wire.id;
-      elem.dataset.id = stop.id;
-      mainElem.appendChild(elem);
-
-      drawnWirePoints[stop.id] = elem;
-      stop.elem = elem;
-    }
   }
 
   //Removing removed wirepoints
@@ -336,11 +254,6 @@ function draw() {
       elem.remove();
       delete drawnWirePoints[i];
     }
-  }
-
-  //Hides the angles screen if nothing is using it
-  if (!showingAngles) {
-    anglesElem.replaceChildren();
   }
 }
 
@@ -407,6 +320,98 @@ function createPlugHolder(gate, input, gateHeight) {
   }
 
   return plugHolder;
+}
+
+//Helper function for draw to create a wire element
+function createWireElem(wire) {
+  let wireElem = document.createElement("div");
+  wireElem.className = "wire";
+
+  let svgElem = document.createElement("svg");
+  svgElem.classList.add("wire-svg");
+  let svg = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  svgElem.appendChild(svg);
+  wireElem.appendChild(svgElem);
+
+  let anglesElem = document.createElement("div");
+  anglesElem.classList.add("angles");
+  wireElem.appendChild(anglesElem);
+
+  let wirePoints = document.createElement("div");
+  wirePoints.classList.add("wire-points");
+  wireElem.appendChild(wirePoints);
+
+  svg.addEventListener("mouseenter", e=>{
+    wire.hovering = true;
+    draw();
+  });
+  svg.addEventListener("mouseleave", e=>{
+    wire.hovering = false;
+    draw();
+  });
+
+  stops = wire.stops;
+
+  svg.addEventListener("mousedown", e => {
+    let nStops = stops.map((elem, i) => {return {x: elem.x * unit, y: elem.y * unit}});
+    let desc = getWireCoords({start, stops: nStops, end});
+
+    let coords = getCoords(e);
+    if (e.button == 0) {
+      let nearestStop = getNearestStop(desc, svgElem, coords);
+
+      if (nearestStop == 0 || nearestStop == wire.stops.length + 1) return;
+
+      startDrag(e, wire.stops[nearestStop-1]);
+
+      //TODO: handle dragging of start and end point
+    }
+    if (e.button == 1) {
+      let nearestStop = getNearestStop(desc, svgElem, coords, true);
+      let mouseDist = getNearestPointOnPath(svgElem, coords);
+      let point = svgElem.getPointAtLength(mouseDist);
+
+      let stop = {
+        x: point.x / unit, 
+        y: point.y / unit, 
+        id: generateID()
+      };
+
+      wire.stops.splice(nearestStop - 1, 0, stop);
+
+      draw();
+      draw();
+      
+      startDrag(e, stop);
+    }
+    if (e.button == 2) {
+      delete currentGate.wires[i];
+      draw();
+    }
+  });
+
+
+
+  //Creating wire points
+  for (let j in wire.stops) {
+    let stop = wire.stops[j];
+
+    let elem = document.createElement("div");
+    elem.className = "wire-point";
+    elem.style.top = stop.y * unit + "px";
+    elem.style.left = stop.x * unit + "px";
+    elem.dataset.wire = wire.id;
+    elem.dataset.id = stop.id;
+    wireElem.children[2].appendChild(elem);
+
+    drawnWirePoints[stop.id] = elem;
+    stop.elem = elem;
+  }
+
+
+
+  
+  return wireElem;
 }
 
 //Creates a gate element without any plugs or shit
@@ -620,6 +625,8 @@ function whileWire(e) {
     end: coords,
 
     active: true,
+
+    elem: previewWireElem
   }
 
   draw();
@@ -651,7 +658,7 @@ function stopWire(e) {
 
       let wire = {
         start: start,
-        stops: wireStops.map((elem, i) => {return {x: elem.x / unit, y: elem.y / unit}}),
+        stops: wireStops.map((elem, i) => {return {x: elem.x / unit, y: elem.y / unit, id: generateID()}}),
         end: end,
         id: generateID()
       };
@@ -1000,29 +1007,34 @@ function getWireCoords(desc) {
   let stops = desc.stops;
   let end = desc.end;
 
-  let plugHolder = currentGate.gates[start.gate].elem.children[1];
-  let plug = plugHolder.children[start.port.i];
-  let box = plug.getBoundingClientRect();
-  start = {
-    x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
-    y: box.y + box.height / 2 - mainbox.y - mainborderwidth
+  if (!start.x) {
+    let plugHolder = currentGate.gates[start.gate].elem.children[1];
+    let plug = plugHolder.children[start.port.i];
+    let box = plug.getBoundingClientRect();
+    start = {
+      x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
+      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
+    }
   }
 
-  plugHolder = currentGate.gates[end.gate].elem.children[0];
-  plug = plugHolder.children[end.port.i];
-  box = plug.getBoundingClientRect();
-  end = {
-    x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
-    y: box.y + box.height / 2 - mainbox.y - mainborderwidth
+  if (!end.x) {
+    plugHolder = currentGate.gates[end.gate].elem.children[0];
+    plug = plugHolder.children[end.port.i];
+    box = plug.getBoundingClientRect();
+    end = {
+      x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
+      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
+    }
   }
 
   return {start, stops, end};
 }
 
 //Takes an object with a start, stops, and end point and generates a few angle elements to show the angles in it
-function showAngles(desc) {
-  anglesElem.replaceChildren();
+function generateAngles(wire) {
+  wire.elem.children[1].replaceChildren();
 
+  let desc = getWireCoords(wire);
   let stops = [{x: desc.start.x-1, y: desc.start.y}, desc.start, ...desc.stops, desc.end];
 
   for (let i = 1; i < stops.length - 1; i++) {
@@ -1044,8 +1056,10 @@ function showAngles(desc) {
     elem.style.top = stop.y + "px";
     elem.style.left = stop.x + "px";
     elem.style.translate = "-50% -130%";
-    anglesElem.appendChild(elem);
+    wire.elem.children[1].appendChild(elem);
   }
+
+  return 
 }
 
 //Deep copies an object recursively
