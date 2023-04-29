@@ -186,6 +186,8 @@ Gates
   --num-inputs: 0;
   --num-outputs: 0;
 
+  width: calc(var(--unit) * (var(--name-length) / 2 + 0.5));
+
   position: static;
   justify-content: space-around;
 

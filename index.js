@@ -51,14 +51,78 @@ document.body.style.setProperty("--unit", unit + "px");
 
 
 //Drawing the gates
-let drawnGates = {};
-let drawnGatesInFooter = {};
-let drawnWires = {};
-let drawnWirePoints = {};
-
 function draw() {
   mainbox = mainElem.getBoundingClientRect();
   mainborderwidth = parseInt(getComputedStyle(mainElem).getPropertyValue('border-left-width'));
+
+
+  let drawnGates = {};
+  let drawnGatesInFooter = {};
+  let drawnWires = {};
+  let drawnWirePoints = {};
+
+  
+  for (let elem of Array.from(mainElem.getElementsByClassName("gate"))) {
+    let id = elem.dataset.id;
+    if (currentGate.gates[id]) {
+      drawnGates[id] = elem;
+    } else {
+      elem.remove();
+    }
+  }
+  
+  for (let elem of Array.from(footerElem.getElementsByClassName("gate"))) {
+    let id = elem.dataset.type;
+    if (gates.all[id] || id == "footer-menu-gate") {
+      drawnGatesInFooter[id] = elem;
+    } else {
+      elem.remove();
+    }
+  }
+  
+  for (let elem of Array.from(mainElem.getElementsByClassName("wire"))) {
+    if (elem.classList.contains("preview")) continue;
+    let id = elem.dataset.id;
+
+    let remove = false;
+    if (currentGate.wires[id]) {
+      let wire = currentGate.wires[id];
+      if (!currentGate.gates[wire.start.gate] || !currentGate.gates[wire.end.gate]) remove = true;
+      else drawnWires[id] = elem;
+    } else {
+      remove = true;
+    }
+
+    if (remove) elem.remove();
+  }
+  
+  for (let elem of Array.from(mainElem.getElementsByClassName("wire-point"))) {
+    if (elem.classList.contains("preview")) continue;
+    let id = elem.dataset.id;
+    let wireId = elem.dataset.wire;
+
+    let remove = false;
+    if (currentGate.wires[wireId]) {
+      let wire = currentGate.wires[wireId];
+      
+      let exists = false;
+      for (let k in wire.stops) {
+        if (id == wire.stops[k].id) {
+          exists = true;
+        }
+      }
+      if (exists) drawnWirePoints[id] = elem;
+      else remove = true;
+    } else {
+      remove = true;
+    }
+
+    if (remove) elem.remove();
+  }
+
+
+
+
   
   //Adding and moving placed gates
   for (let i in currentGate.gates) {
@@ -108,30 +172,18 @@ function draw() {
     gate.elem = gateElem;
   }
 
-  //Removing deleted gates
-  for (let i in drawnGates) {
-    let gate = currentGate.gates[i];
-    if (gate) {
-      let gatebox = gate.elem.getBoundingClientRect();
-      if (
-       (gate.x < 0 || 
-        gate.y < 0 ||
-        gate.x + gatebox.width / unit >= mainbox.width / unit ||
-        gate.y + gatebox.height / unit >= mainbox.height / unit) &&
-        !gate.isDragged
-      ) {
-        delete currentGate.gates[i];
-      }
-    }
-    if (!currentGate.gates[i]) {
-      drawnGates[i].remove();
-      delete drawnGates[i];
-    }
-  }
 
   //Placing gates in footer
+  if (!drawnGatesInFooter["footer-menu-gate"]) {
+    let menuShell = createShellGate({color: "#6b6b6d", name: "footer-menu-gate", displayName: "all"});
+    menuShell.style.marginRight = "0.4rem";
+    footerElem.appendChild(menuShell);
+    drawnGatesInFooter["footer-menu-gate"] = menuShell;
+  }
+  let prevGate;
   for (let i in gates.all) {
     let gateType = gates.all[i];
+    prevGate = gateType;
 
     let gateElem = drawnGatesInFooter[i];
     if (gateElem) {
@@ -145,10 +197,15 @@ function draw() {
 
     gateElem.addEventListener("mousedown", e => {footerGateDown(e, gateType)});
 
-
+    if (prevGate && gateType.baseGate == false && prevGate.baseGate == true) {
+      let elem = document.createElement("div");
+      elem.className = "footer-divider";
+      footerElem.appendChild(gateElem);
+    }
     footerElem.appendChild(gateElem);
     drawnGatesInFooter[i] = gateElem;
   }
+
 
   //Adding and moving placed wires
   for (let i in currentGate.wires) {
@@ -189,25 +246,6 @@ function draw() {
     wire.elem = wireElem;
 
     wireElem.children[0].children[0].setAttribute("d", path);
-  }
-  
-  //Removing deleted wires
-  for (let i in drawnWires) {
-    let wireElem = drawnWires[i];
-    let wire = currentGate.wires[i];
-
-    if (
-      wire &&
-      (!currentGate.gates[wire.start.gate] ||
-      !currentGate.gates[wire.end.gate])
-    ) {
-      delete currentGate.wires[i];
-    }
-
-    if (!currentGate.wires[i]) {
-      wireElem.remove();
-      delete drawnWires[i];
-    }
   }
 
   //Moving preview wire
@@ -257,27 +295,6 @@ function draw() {
   
       drawnWirePoints[stop.id] = elem;
       stop.elem = elem;
-    }
-  }
-
-  //Removing removed wirepoints
-  for (let i in drawnWirePoints) {
-    let elem = drawnWirePoints[i];
-
-    let exists = false;
-
-    for (let j in currentGate.wires) {
-      let wire = currentGate.wires[j];
-      for (let k in wire.stops) {
-        if (i == wire.stops[k].id) {
-          exists = true;
-        }
-      }
-    }
-
-    if (!exists) {
-      elem.remove();
-      delete drawnWirePoints[i];
     }
   }
 }
@@ -351,6 +368,7 @@ function createPlugHolder(gate, input, gateHeight) {
 function createWireElem(wire) {
   let wireElem = document.createElement("div");
   wireElem.className = "wire";
+  wireElem.dataset.id = wire.id;
 
   let svgElem = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svgElem.classList.add("wire-svg");
@@ -446,7 +464,6 @@ function createWireElem(wire) {
     elem.dataset.id = stop.id;
     wireElem.children[2].appendChild(elem);
 
-    drawnWirePoints[stop.id] = elem;
     stop.elem = elem;
   }
 
@@ -458,11 +475,14 @@ function createWireElem(wire) {
 
 //Creates a gate element without any plugs or shit
 function createShellGate(gateType) {
+  let name = gateType.displayName || gateType.name;
+
   let gateElem = document.createElement("div");
   gateElem.className = "gate in-footer";
   gateElem.style.backgroundColor = gateType.color;
-  gateElem.style.setProperty("--name-length", Math.ceil(gateType.name.length / 2) * 2);
-  gateElem.innerText = gateType.name;
+  gateElem.style.setProperty("--name-length", Math.ceil(name.length / 2) * 2);
+  gateElem.innerText = name;
+  gateElem.dataset.type = gateType.name;
 
   return gateElem;
 }
@@ -624,6 +644,16 @@ function stopDrag(e) {
 
   dragged.forEach((object, i) => {
     object.object.isDragged = false;
+    let ob = object.object;
+    let gatebox = ob.elem.getBoundingClientRect();
+    if (
+      ob.x < 0 || 
+      ob.y < 0 ||
+      ob.x + gatebox.width / unit >= mainbox.width / unit ||
+      ob.y + gatebox.height / unit >= mainbox.height / unit
+    ) {
+      removeFromID(ob.id);
+    }
   });
   draw();
   document.removeEventListener("mousemove", whileDrag);
