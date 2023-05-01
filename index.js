@@ -5,13 +5,12 @@ let unit;
 let sizeDivisions = 30;
 let step = 4;
 
-let previewWire = {active: false};
+let previewWire = {active: false, id: "preview-wire"};
 
 //Defining DOM Elements
 const headerElem = document.getElementsByClassName("header")[0];
 const mainElem = document.getElementsByClassName("main")[0];
 const footerElem = document.getElementsByClassName("footer")[0];
-const previewWireElem = document.getElementsByClassName("wire preview")[0];
 
 const selectionElem = document.getElementsByClassName("selection")[0];
 
@@ -50,52 +49,205 @@ unit = mainbox.height / sizeDivisions;
 document.body.style.setProperty("--unit", unit + "px");
 
 
+let footerMenuGate = {
+  color: "#6b6b6d", 
+  name: "footer-menu-gate", 
+  displayName: "all", 
+  mousedown: (e) => {
+    
+  }
+};
+
+
+const domagic = new Domagic("main");
+domagic.domTypes = {
+  "gate": {
+    init: function(gate) {
+      let gateType = gates.all[gate.type];
+  
+      let gateElem = document.createElement("div");
+  
+      let inputLen = gateType.inputs.length;
+      let outputLen = gateType.outputs.length;
+      let gateHeight = Math.max(inputLen, outputLen) * 0.75;
+  
+      gateElem.className = "gate";
+      gateElem.innerText = gate.type;
+      gateElem.style.setProperty("--name-length", Math.ceil(gate.type.length / 2) * 2);
+      gateElem.style.setProperty("--num-inputs", inputLen);
+      gateElem.style.setProperty("--num-outputs", outputLen);
+      gateElem.style.backgroundColor = gateType.color;
+  
+      let left = createPlugHolder(gate, true, gateHeight);
+      let right = createPlugHolder(gate, false, gateHeight);
+  
+      gateElem.prepend(left);
+      gateElem.appendChild(right);
+      mainElem.appendChild(gateElem);
+  
+      gateElem.dataset.id = gate.id;
+  
+      gateElem.addEventListener("mousedown", e => {
+        if (e.button == 0) {
+          startDrag(e, gate)
+        }
+        else if (e.button == 2) {
+          delete currentGate.gates[gate.id];
+          draw();
+        }
+      });
+  
+      return gateElem;
+    },
+    update: function(gate) {
+      gate.domElement.style.left = `calc(var(--unit) * ${gate.x})`;
+      gate.domElement.style.top = `calc(var(--unit) * ${gate.y})`;
+      
+      return (currentGate.gates[gate.id] == undefined);
+    },
+    destroy: function(gate) {
+      
+    },
+  },
+  "footer-gate": {
+    init: function(gateType) {
+      let gateElem = createShellGate(gateType);
+      if (gateType.name == "footer-menu-gate") {
+        gateElem.id = "footer-menu";
+      }
+  
+      let func = gateType.mousedown || (e => {footerGateDown(e, gateType)});
+      gateElem.addEventListener("mousedown", func);
+  
+      footerElem.appendChild(gateElem);
+      return gateElem;
+    },
+    update: function(gateType) {
+      let elem = gateType.domElement;
+
+      let name = gateType.displayName || gateType.name;
+      elem.style.backgroundColor = gateType.color;
+      elem.innerText = name;
+      elem.style.setProperty("--name-length", Math.ceil(name.length / 2) * 2);
+
+      return !(gates.all[gateType.name] || gateType.name == "footer-menu-gate");
+    },
+    destroy: function(gateType) {
+      
+    },
+  },
+  "wire": {
+    init: function(wire) {
+      wireElem = createWireElem(wire);
+      mainElem.appendChild(wireElem);
+
+      if (wire.id == "preview-wire") {
+        wireElem.classList.add("preview");
+      }
+
+      return wireElem;
+    },
+    update: function(wire) {
+      let elem = wire.domElement;
+
+      if (!elem.classList.contains("preview") && (!currentGate.gates[wire.start.gate] || !currentGate.gates[wire.end.gate])) return true;
+
+      if (wire.active == false) {
+        elem.style.display = "none";
+        return;
+      };
+      elem.style.display = "block";
+
+      let start = wire.start;
+      let stops = wire.stops;
+      let end = wire.end;
+
+      let desc = getWireCoords({start, stops, end});
+      let path = generatePath(desc, (wire.hovering?0:10));
+      
+      elem.children[0].children[0].setAttribute("d", path);
+
+      let dragging = false;
+      stops.forEach(elem => {
+        if (elem.isDragged) dragging = true;
+      });
+
+      if (wire.hovering || dragging || wire.active) {
+        generateAngles(wire);
+        
+        for (let i in wire.stops) {
+          wire.stops[i].domElement?.classList.add("hovering");
+        }
+      } else {
+        for (let i in wire.stops) {
+          wire.stops[i].domElement?.classList.remove("hovering");
+        }
+        elem.children[1].replaceChildren();
+      }
+    },
+    destroy: function(wire) {
+      
+    },
+  }
+};
+
+let drawnGates = {};
+let drawnGatesInFooter = {};
+let drawnWires = {};
+let drawnWirePoints = {};
+
 //Drawing the gates
 function draw() {
   mainbox = mainElem.getBoundingClientRect();
   mainborderwidth = parseInt(getComputedStyle(mainElem).getPropertyValue('border-left-width'));
 
 
-  let drawnGates = {};
-  let drawnGatesInFooter = {};
-  let drawnWires = {};
-  let drawnWirePoints = {};
-
-  
-  for (let elem of Array.from(mainElem.getElementsByClassName("gate"))) {
-    let id = elem.dataset.id;
-    if (currentGate.gates[id]) {
-      drawnGates[id] = elem;
-    } else {
-      elem.remove();
+  for (let i in currentGate.gates) {
+    let gate = currentGate.gates[i];
+    if (!gate.domElement) {
+      domagic.objects[i] = {
+        domType: "gate",
+        element: gate,
+      };
     }
   }
-  
-  for (let elem of Array.from(footerElem.getElementsByClassName("gate"))) {
-    let id = elem.dataset.type;
-    if (gates.all[id] || id == "footer-menu-gate") {
-      drawnGatesInFooter[id] = elem;
-    } else {
-      elem.remove();
+
+  if (!footerMenuGate.domElement) {
+    domagic.objects["footer-menu-gate"] = {
+      domType: "footer-gate",
+      element: footerMenuGate,
+    };
+  }
+  for (let i in gates.all) {
+    let gateType = gates.all[i];
+    if (!gateType.domElement) {
+      domagic.objects[i] = {
+        domType: "footer-gate",
+        element: gateType,
+      };
     }
   }
-  
-  for (let elem of Array.from(mainElem.getElementsByClassName("wire"))) {
-    if (elem.classList.contains("preview")) continue;
-    let id = elem.dataset.id;
 
-    let remove = false;
-    if (currentGate.wires[id]) {
-      let wire = currentGate.wires[id];
-      if (!currentGate.gates[wire.start.gate] || !currentGate.gates[wire.end.gate]) remove = true;
-      else drawnWires[id] = elem;
-    } else {
-      remove = true;
-    }
-
-    if (remove) elem.remove();
+  if (!previewWire.domElement) {
+    domagic.objects["preview-wire"] = {
+      domType: "wire",
+      element: previewWire,
+    };
   }
-  
+  for (let i in currentGate.wires) {
+    let wire = currentGate.wires[i];
+    if (!wire.domElement) {
+      domagic.objects[i] = {
+        domType: "wire",
+        element: wire,
+      };
+    }
+  }
+
+  domagic.draw();
+
+
+  //TODO: do all this with domagic instead
   for (let elem of Array.from(mainElem.getElementsByClassName("wire-point"))) {
     if (elem.classList.contains("preview")) continue;
     let id = elem.dataset.id;
@@ -121,157 +273,6 @@ function draw() {
   }
 
 
-
-
-  
-  //Adding and moving placed gates
-  for (let i in currentGate.gates) {
-    let gate = currentGate.gates[i];
-    let gateType = gates.all[gate.type];
-    if (drawnGates[i]) {
-      drawnGates[i].style.left = `calc(var(--unit) * ${gate.x})`;
-      drawnGates[i].style.top = `calc(var(--unit) * ${gate.y})`;
-      continue;
-    } 
-
-    let gateElem = document.createElement("div");
-
-    let inputLen = gateType.inputs.length;
-    let outputLen = gateType.outputs.length;
-    let gateHeight = Math.max(inputLen, outputLen) * 0.75;
-
-    gateElem.className = "gate";
-    gateElem.style.left = `calc(var(--unit) * ${gate.x})`;
-    gateElem.style.top = `calc(var(--unit) * ${gate.y})`;
-    gateElem.innerText = gate.type;
-    gateElem.style.setProperty("--name-length", Math.ceil(gate.type.length / 2) * 2);
-    gateElem.style.setProperty("--num-inputs", inputLen);
-    gateElem.style.setProperty("--num-outputs", outputLen);
-    gateElem.style.backgroundColor = gateType.color;
-
-    let left = createPlugHolder(gate, true, gateHeight);
-    let right = createPlugHolder(gate, false, gateHeight);
-
-    gateElem.prepend(left);
-    gateElem.appendChild(right);
-    mainElem.appendChild(gateElem);
-
-    gateElem.dataset.id = gate.id;
-
-    gateElem.addEventListener("mousedown", e => {
-      if (e.button == 0) {
-        startDrag(e, gate)
-      }
-      else if (e.button == 2) {
-        delete currentGate.gates[i];
-        draw();
-      }
-    });
-
-    drawnGates[i] = gateElem;
-    gate.elem = gateElem;
-  }
-
-
-  //Placing gates in footer
-  if (!drawnGatesInFooter["footer-menu-gate"]) {
-    let menuShell = createShellGate({color: "#6b6b6d", name: "footer-menu-gate", displayName: "all"});
-    menuShell.style.marginRight = "0.4rem";
-    footerElem.appendChild(menuShell);
-    drawnGatesInFooter["footer-menu-gate"] = menuShell;
-  }
-  let prevGate;
-  for (let i in gates.all) {
-    let gateType = gates.all[i];
-    prevGate = gateType;
-
-    let gateElem = drawnGatesInFooter[i];
-    if (gateElem) {
-      gateElem.style.backgroundColor = gateType.color;
-      gateElem.innerText = i;
-      gateElem.style.setProperty("--name-length", Math.ceil(gateType.name.length / 2) * 2);
-      continue;
-    }
-
-    gateElem = createShellGate(gateType);
-
-    gateElem.addEventListener("mousedown", e => {footerGateDown(e, gateType)});
-
-    if (prevGate && gateType.baseGate == false && prevGate.baseGate == true) {
-      let elem = document.createElement("div");
-      elem.className = "footer-divider";
-      footerElem.appendChild(gateElem);
-    }
-    footerElem.appendChild(gateElem);
-    drawnGatesInFooter[i] = gateElem;
-  }
-
-
-  //Adding and moving placed wires
-  for (let i in currentGate.wires) {
-    let wire = currentGate.wires[i];
-    
-    let start = wire.start;
-    let stops = wire.stops;
-    let end = wire.end;
-
-    let desc = getWireCoords({start, stops, end});
-    let path = generatePath(desc, (wire.hovering?0:10));
-
-    let dragging = false;
-
-    stops.forEach(elem => {
-      if (elem.isDragged) dragging = true;
-    });
-
-    if (wire.hovering || dragging) {
-      generateAngles(wire);
-      
-      for (let i in wire.stops) {
-        wire.stops[i].elem?.classList.add("hovering");
-      }
-    } else {
-      for (let i in wire.stops) {
-        wire.stops[i].elem?.classList.remove("hovering");
-      }
-      wire.elem?.children[1].replaceChildren();
-    }
-
-    let wireElem = drawnWires[i];
-    if (!wireElem) {
-      wireElem = createWireElem(wire);
-      mainElem.appendChild(wireElem);
-      drawnWires[i] = wireElem;
-    }
-    wire.elem = wireElem;
-
-    wireElem.children[0].children[0].setAttribute("d", path);
-  }
-
-  //Moving preview wire
-  if (previewWire.active) {
-    let start = previewWire.start;
-    let stops = previewWire.stops;
-    let end = previewWire.end;
-
-    let plugHolder = currentGate.gates[start.gate].elem.children[(start.port.input)?0:1];
-    let plug = plugHolder.children[start.port.i];
-    let box = plug.getBoundingClientRect();
-    
-    start = {
-      x: box.x + box.width / 2 - mainbox.x - mainborderwidth, 
-      y: box.y + box.height / 2 - mainbox.y - mainborderwidth
-    };
-
-    let path = generatePath({start, stops, end}, 0);
-    previewWireElem.children[0].children[0].setAttribute("d", path);
-    previewWireElem.style.display = "block";
-
-    generateAngles(previewWire);
-  } else {
-    previewWireElem.style.display = "none";
-  }
-
   //Creating unplaced wire points
   for (let i in currentGate.wires) {
     let wire = currentGate.wires[i];
@@ -291,38 +292,13 @@ function draw() {
       elem.style.left = stop.x * unit + "px";
       elem.dataset.wire = wire.id;
       elem.dataset.id = stop.id;
-      wire.elem.children[2].appendChild(elem);
+      wire.domElement.children[2].appendChild(elem);
   
       drawnWirePoints[stop.id] = elem;
-      stop.elem = elem;
+      stop.domElement = elem;
     }
   }
-}
 
-//Call to invalidate all drawn shit
-function redraw() {
-  for (let i in drawnGates) {
-    drawnGates[i].remove();
-  }
-  drawnGates = {};
-
-  for (let i in drawnGatesInFooter) {
-    drawnGatesInFooter[i].remove();
-  }
-  drawnGatesInFooter = {};
-
-  for (let i in drawnWires) {
-    drawnWires[i].remove();
-  }
-  drawnWires = {};
-
-  for (let i in drawnWirePoints) {
-    drawnWirePoints[i].remove();
-  }
-  drawnWirePoints = {};
-
-  changeGate(currentGateName);
-  draw();
 }
 
 //Helper function for draw to create the plughodler + plugs for a gate on one side
@@ -464,7 +440,7 @@ function createWireElem(wire) {
     elem.dataset.id = stop.id;
     wireElem.children[2].appendChild(elem);
 
-    stop.elem = elem;
+    stop.domElement = elem;
   }
 
 
@@ -504,7 +480,7 @@ function footerGateDown(e, gateType) {
     currentGate.gates[gate.id] = gate;
 
     draw();
-    let box = gate.elem.getBoundingClientRect();
+    let box = gate.domElement.getBoundingClientRect();
     gate.x -= box.width / 2 / unit;
     gate.y -= box.height / 2 / unit;
     draw();
@@ -585,17 +561,17 @@ async function editGate() {
   currentGate.name = res.name;
   currentGateName = res.name;
 
-  redraw();
+  domagic.redraw();
 }
 
 //Dragging objects (They must have x, y, elem properties)
 let dragged = [];
 function startDrag(e, object) {
   let coords = getCoords(e);
-  if (!e.ctrlKey && !object.elem.classList.contains("selected")) {
+  if (!e.ctrlKey && !object.domElement.classList.contains("selected")) {
     clearSelected();
   }
-  object.elem.classList.add("selected");
+  object.domElement.classList.add("selected");
 
   dragged = [];
   getSelected().forEach((elem, i) => {
@@ -645,7 +621,7 @@ function stopDrag(e) {
   dragged.forEach((object, i) => {
     object.object.isDragged = false;
     let ob = object.object;
-    let gatebox = ob.elem.getBoundingClientRect();
+    let gatebox = ob.domElement.getBoundingClientRect();
     if (
       ob.x < 0 || 
       ob.y < 0 ||
@@ -690,16 +666,11 @@ function whileWire(e) {
     };
   }
 
+  previewWire.start = wireStart;
+  previewWire.stops = wireStops;
+  previewWire.end = coords;
+  previewWire.active = true;
 
-  previewWire = {
-    start: wireStart,
-    stops: wireStops,
-    end: coords,
-
-    active: true,
-
-    elem: previewWireElem
-  }
 
   draw();
 }
@@ -1093,12 +1064,14 @@ function getWireCoords(desc) {
   let stops = desc.stops;
   let end = desc.end;
 
+  let startInput = start.port.input * 1;
+
   if (!end.x && !start.x) {
     stops = stops.map(elem=>{return {x: elem.x * unit, y: elem.y * unit}});
   }
 
   if (!start.x) {
-    let plugHolder = currentGate.gates[start.gate].elem.children[1];
+    let plugHolder = currentGate.gates[start.gate].domElement.children[1-startInput];
     let plug = plugHolder.children[start.port.i];
     let box = plug.getBoundingClientRect();
     start = {
@@ -1108,7 +1081,7 @@ function getWireCoords(desc) {
   }
 
   if (!end.x) {
-    plugHolder = currentGate.gates[end.gate].elem.children[0];
+    plugHolder = currentGate.gates[end.gate].domElement.children[startInput*1];
     plug = plugHolder.children[end.port.i];
     box = plug.getBoundingClientRect();
     end = {
@@ -1122,7 +1095,7 @@ function getWireCoords(desc) {
 
 //Takes an object with a start, stops, and end point and generates a few angle elements to show the angles in it
 function generateAngles(wire) {
-  wire.elem.children[1].replaceChildren();
+  wire.domElement.children[1].replaceChildren();
 
   let desc = getWireCoords(wire);
   let stops = [{x: desc.start.x-1, y: desc.start.y}, desc.start, ...desc.stops, desc.end];
@@ -1146,7 +1119,7 @@ function generateAngles(wire) {
     elem.style.top = stop.y + "px";
     elem.style.left = stop.x + "px";
     elem.style.translate = "-50% -130%";
-    wire.elem.children[1].appendChild(elem);
+    wire.domElement.children[1].appendChild(elem);
   }
 
   return 

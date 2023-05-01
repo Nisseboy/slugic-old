@@ -194,6 +194,10 @@ Gates
   margin-left: calc(var(--unit) * 0.2);
 }
 
+#footer-menu {
+  margin-right: 0.4rem;
+}
+
 /*
 Plugs
 */
