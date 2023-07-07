@@ -299,6 +299,17 @@ function draw() {
     }
   }
 
+  
+  for (let i in currentGate.wires) {
+    let wire = currentGate.wires[i];
+    if (!wire.domElement) {
+      domagic.objects[i] = {
+        domType: "wire",
+        element: wire,
+      };
+    }
+  }
+
 }
 
 //Helper function for draw to create the plughodler + plugs for a gate on one side
